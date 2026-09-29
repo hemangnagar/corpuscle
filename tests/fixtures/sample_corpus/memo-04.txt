@@ -1,0 +1,1 @@
+Quarterly data operations memo. The ingest pipeline processed the collection window without incident. Two sources were added.

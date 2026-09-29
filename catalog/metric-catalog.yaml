@@ -1,0 +1,842 @@
+catalog_version: 0.1.0
+note: 'Metric IDs are stable. A change to any method bumps method_version; the manifest records both. status: baseline = one
+  of the 54 in the existing profiler; corrected = a baseline metric with a fixed method; added = new.'
+detectors:
+  glotlid:
+    package: glotlid
+    version: '3.0'
+    role: language identification with confidence
+  datasketch:
+    package: datasketch
+    version: 1.6.5
+    role: MinHash near-duplicate detection
+  textstat:
+    package: textstat
+    version: 0.7.4
+    role: readability formulas and surface counts
+  presidio:
+    package: presidio-analyzer
+    version: 2.2.358
+    role: PII entity detection
+    model: spacy/en_core_web_lg 3.8.0
+  ftfy:
+    package: ftfy
+    version: 6.3.1
+    role: mojibake detection
+  tokenizer:
+    package: tiktoken
+    version: 0.9.0
+    encoding: o200k_base
+    role: token counting; per-model counts added per deployment
+families:
+- descriptive
+- duplication
+- language
+- lexical
+- readability
+- integrity
+- compliance
+- provenance
+- model_fit
+metrics:
+- id: vol.total_docs
+  family: descriptive
+  name: Total documents
+  method: count of records
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: docs
+- id: vol.total_tokens
+  family: descriptive
+  name: Total tokens
+  method: sum of per-doc token counts
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: tokens
+  detector: tokenizer
+  note: v0 reports under a named tokenizer pin; per-model counts are the model-fit family.
+- id: dup.exact_count
+  family: duplication
+  name: Exact duplicate count
+  method: count of docs whose doc_hash repeats
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: docs
+- id: dup.exact_rate
+  family: duplication
+  name: Exact duplicate rate
+  method: dup.exact_count / vol.total_docs
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: fraction
+- id: dup.near_count
+  family: duplication
+  name: Near-duplicate count
+  method: MinHash LSH clusters, 128 perms, 5-word shingles, threshold configurable (default 0.8)
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: docs
+  detector: datasketch
+- id: dup.near_rate
+  family: duplication
+  name: Near-duplicate rate
+  method: dup.near_count / vol.total_docs
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: fraction
+  detector: datasketch
+- id: lang.en.count
+  family: language
+  name: English document count
+  method: GlotLID top label; unknown when confidence < threshold
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: docs
+  detector: glotlid
+- id: lang.en.rate
+  family: language
+  name: English document share
+  method: lang.en.count / vol.total_docs
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: fraction
+  detector: glotlid
+- id: lang.es.count
+  family: language
+  name: Spanish document count
+  method: GlotLID top label; unknown when confidence < threshold
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: docs
+  detector: glotlid
+- id: lang.es.rate
+  family: language
+  name: Spanish document share
+  method: lang.es.count / vol.total_docs
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: fraction
+  detector: glotlid
+- id: lang.tl.count
+  family: language
+  name: Tagalog document count
+  method: GlotLID top label; unknown when confidence < threshold
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: docs
+  detector: glotlid
+- id: lang.tl.rate
+  family: language
+  name: Tagalog document share
+  method: lang.tl.count / vol.total_docs
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: fraction
+  detector: glotlid
+- id: lang.unknown.count
+  family: language
+  name: Unknown document count
+  method: GlotLID top label; unknown when confidence < threshold
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: docs
+  detector: glotlid
+- id: lang.unknown.rate
+  family: language
+  name: Unknown document share
+  method: lang.unknown.count / vol.total_docs
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: fraction
+  detector: glotlid
+- id: lex.ttr
+  family: lexical
+  name: Type-token ratio
+  method: types / tokens per doc
+  method_version: 0.1.0
+  level: document
+  scope: all
+  status: baseline
+  aggregations:
+  - mean
+  - var
+  note: Kept for continuity; length-biased. See lex.mtld.
+- id: lex.mtld
+  family: lexical
+  name: MTLD
+  method: measure of textual lexical diversity, TTR threshold 0.72
+  method_version: 0.1.0
+  level: document
+  scope: all
+  status: corrected
+  aggregations:
+  - mean
+  - var
+  - p5
+  - p50
+  - p95
+- id: read.flesch_reading_ease
+  family: readability
+  name: Flesch reading ease
+  method: textstat.flesch_reading_ease
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  aggregations:
+  - mean
+  - var
+  - p5
+  - p50
+  - p95
+  detector: textstat
+  note: English-only formula; computed on the English slice, not the corpus.
+- id: read.flesch_kincaid_grade
+  family: readability
+  name: Flesch-Kincaid grade
+  method: textstat.flesch_kincaid_grade
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  aggregations:
+  - mean
+  - var
+  - p5
+  - p50
+  - p95
+  detector: textstat
+  note: English-only formula; computed on the English slice, not the corpus.
+- id: read.smog
+  family: readability
+  name: SMOG index
+  method: textstat.smog
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  aggregations:
+  - mean
+  - var
+  - p5
+  - p50
+  - p95
+  detector: textstat
+  note: English-only formula; computed on the English slice, not the corpus.
+- id: read.coleman_liau
+  family: readability
+  name: Coleman-Liau index
+  method: textstat.coleman_liau
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  aggregations:
+  - mean
+  - var
+  - p5
+  - p50
+  - p95
+  detector: textstat
+  note: English-only formula; computed on the English slice, not the corpus.
+- id: read.ari
+  family: readability
+  name: Automated readability index
+  method: textstat.ari
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  aggregations:
+  - mean
+  - var
+  - p5
+  - p50
+  - p95
+  detector: textstat
+  note: English-only formula; computed on the English slice, not the corpus.
+- id: read.dale_chall
+  family: readability
+  name: Dale-Chall score
+  method: textstat.dale_chall
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  aggregations:
+  - mean
+  - var
+  - p5
+  - p50
+  - p95
+  detector: textstat
+  note: English-only formula; computed on the English slice, not the corpus.
+- id: read.linsear_write
+  family: readability
+  name: Linsear Write formula
+  method: textstat.linsear_write
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  aggregations:
+  - mean
+  - var
+  - p5
+  - p50
+  - p95
+  detector: textstat
+  note: English-only formula; computed on the English slice, not the corpus.
+- id: read.gunning_fog
+  family: readability
+  name: Gunning fog
+  method: textstat.gunning_fog
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  aggregations:
+  - mean
+  - var
+  - p5
+  - p50
+  - p95
+  detector: textstat
+  note: English-only formula; computed on the English slice, not the corpus.
+- id: read.mcalpine_eflaw
+  family: readability
+  name: McAlpine EFLAW
+  method: textstat.mcalpine_eflaw
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  aggregations:
+  - mean
+  - var
+  - p5
+  - p50
+  - p95
+  detector: textstat
+  note: English-only formula; computed on the English slice, not the corpus.
+- id: read.fernandez_huerta
+  family: readability
+  name: Fernández-Huerta
+  method: textstat.fernandez_huerta
+  method_version: 0.1.0
+  level: document
+  scope: lang:es
+  status: added
+  aggregations:
+  - mean
+  - var
+  - p5
+  - p50
+  - p95
+  detector: textstat
+- id: read.szigriszt_pazos
+  family: readability
+  name: Szigriszt-Pazos
+  method: textstat.szigriszt_pazos
+  method_version: 0.1.0
+  level: document
+  scope: lang:es
+  status: added
+  aggregations:
+  - mean
+  - var
+  - p5
+  - p50
+  - p95
+  detector: textstat
+- id: cnt.word_count
+  family: descriptive
+  name: Word count
+  method: textstat.word_count
+  method_version: 0.1.0
+  level: document
+  scope: all
+  status: baseline
+  aggregations:
+  - mean
+  - var
+  - min
+  - p5
+  - p50
+  - p95
+  - max
+  detector: textstat
+- id: cnt.sentence_count
+  family: descriptive
+  name: Sentence count
+  method: textstat.sentence_count
+  method_version: 0.1.0
+  level: document
+  scope: all
+  status: baseline
+  aggregations:
+  - mean
+  - var
+  - min
+  - p5
+  - p50
+  - p95
+  - max
+  detector: textstat
+- id: cnt.char_count
+  family: descriptive
+  name: Character count
+  method: textstat.char_count
+  method_version: 0.1.0
+  level: document
+  scope: all
+  status: baseline
+  aggregations:
+  - mean
+  - var
+  - min
+  - p5
+  - p50
+  - p95
+  - max
+  detector: textstat
+- id: cnt.letter_count
+  family: descriptive
+  name: Letter count
+  method: textstat.letter_count
+  method_version: 0.1.0
+  level: document
+  scope: all
+  status: baseline
+  aggregations:
+  - mean
+  - var
+  - min
+  - p5
+  - p50
+  - p95
+  - max
+  detector: textstat
+- id: cnt.syllable_count
+  family: descriptive
+  name: Syllable count
+  method: textstat.syllable_count
+  method_version: 0.1.0
+  level: document
+  scope: all
+  status: baseline
+  aggregations:
+  - mean
+  - var
+  - min
+  - p5
+  - p50
+  - p95
+  - max
+  detector: textstat
+  note: difficult_words and syllables are English-calibrated; reported per language slice.
+- id: cnt.monosyllable_count
+  family: descriptive
+  name: Monosyllable count
+  method: textstat.monosyllable_count
+  method_version: 0.1.0
+  level: document
+  scope: all
+  status: baseline
+  aggregations:
+  - mean
+  - var
+  - min
+  - p5
+  - p50
+  - p95
+  - max
+  detector: textstat
+  note: difficult_words and syllables are English-calibrated; reported per language slice.
+- id: cnt.polysyllable_count
+  family: descriptive
+  name: Polysyllable count
+  method: textstat.polysyllable_count
+  method_version: 0.1.0
+  level: document
+  scope: all
+  status: baseline
+  aggregations:
+  - mean
+  - var
+  - min
+  - p5
+  - p50
+  - p95
+  - max
+  detector: textstat
+  note: difficult_words and syllables are English-calibrated; reported per language slice.
+- id: cnt.difficult_words
+  family: descriptive
+  name: Difficult words
+  method: textstat.difficult_words
+  method_version: 0.1.0
+  level: document
+  scope: all
+  status: baseline
+  aggregations:
+  - mean
+  - var
+  - min
+  - p5
+  - p50
+  - p95
+  - max
+  detector: textstat
+  note: difficult_words and syllables are English-calibrated; reported per language slice.
+- id: cnt.words_per_sentence
+  family: descriptive
+  name: Average words per sentence
+  method: textstat.words_per_sentence
+  method_version: 0.1.0
+  level: document
+  scope: all
+  status: baseline
+  aggregations:
+  - mean
+  - var
+  - min
+  - p5
+  - p50
+  - p95
+  - max
+  detector: textstat
+- id: cnt.reading_time_sec
+  family: descriptive
+  name: Reading time (s)
+  method: textstat.reading_time_sec
+  method_version: 0.1.0
+  level: document
+  scope: all
+  status: baseline
+  aggregations:
+  - mean
+  - var
+  - min
+  - p5
+  - p50
+  - p95
+  - max
+  detector: textstat
+- id: cnt.token_count
+  family: descriptive
+  name: Token count
+  method: tokenizer pin
+  method_version: 0.1.0
+  level: document
+  scope: all
+  status: added
+  aggregations:
+  - mean
+  - var
+  - min
+  - p5
+  - p50
+  - p95
+  - max
+  detector: tokenizer
+  note: Percentiles are what chunking decisions need.
+- id: int.markup_residue_rate
+  family: integrity
+  name: Markup residue rate
+  method: share of docs with HTML/XML tag residue after parsing
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+  unit: fraction
+- id: int.mojibake_rate
+  family: integrity
+  name: Mojibake rate
+  method: ftfy detects fixable encoding damage
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+  unit: fraction
+  detector: ftfy
+- id: int.control_char_rate
+  family: integrity
+  name: Control-character rate
+  method: docs containing non-printable chars outside whitespace
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+  unit: fraction
+- id: int.near_empty_rate
+  family: integrity
+  name: Near-empty document rate
+  method: docs under 20 tokens
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+  unit: fraction
+- id: int.truncation_rate
+  family: integrity
+  name: Truncation rate
+  method: docs ending mid-sentence with no terminal punctuation
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+  unit: fraction
+- id: int.boilerplate_share
+  family: integrity
+  name: Boilerplate share
+  method: fraction of lines removed by boilerplate filter
+  method_version: 0.1.0
+  level: document
+  scope: all
+  status: added
+  aggregations:
+  - mean
+  - p50
+  - p95
+  unit: fraction
+- id: int.intra_doc_repetition
+  family: integrity
+  name: Intra-document repetition
+  method: share of duplicate lines/paragraphs within a doc
+  method_version: 0.1.0
+  level: document
+  scope: all
+  status: added
+  aggregations:
+  - mean
+  - p50
+  - p95
+  unit: fraction
+- id: int.ngram_repetition
+  family: integrity
+  name: N-gram repetition ratio
+  method: Gopher-style duplicate 2..4-gram character share
+  method_version: 0.1.0
+  level: document
+  scope: all
+  status: added
+  aggregations:
+  - mean
+  - p50
+  - p95
+  unit: fraction
+- id: lang.histogram
+  family: language
+  name: Language histogram
+  method: GlotLID label -> count, all labels
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+  detector: glotlid
+- id: lang.confidence
+  family: language
+  name: Language ID confidence
+  method: GlotLID top-label probability
+  method_version: 0.1.0
+  level: document
+  scope: all
+  status: added
+  aggregations:
+  - mean
+  - p5
+  - p50
+  detector: glotlid
+- id: lang.mixed_rate
+  family: language
+  name: Mixed-language document rate
+  method: second label above 0.2 within a doc
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+  unit: fraction
+  detector: glotlid
+- id: lang.script_histogram
+  family: language
+  name: Script histogram
+  method: Unicode script of majority characters
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+- id: pii.hit_rate
+  family: compliance
+  name: PII hit rate
+  method: docs with >=1 PII entity / total
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+  unit: fraction
+  detector: presidio
+- id: pii.by_category
+  family: compliance
+  name: PII entities by category
+  method: category -> entity count (values never stored)
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+  detector: presidio
+- id: pii.usp_indicator_rate
+  family: compliance
+  name: US-person indicator rate
+  method: docs with USP indicators per policy list
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+  unit: fraction
+  detector: presidio
+  note: Policy-defined indicator set; minimization status recorded per finding.
+- id: mark.coverage
+  family: compliance
+  name: Marking coverage
+  method: docs with a parseable banner or portion marks / total
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+  unit: fraction
+- id: mark.conflict_rate
+  family: compliance
+  name: Marking conflict rate
+  method: docs whose banner and portion marks disagree
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+  unit: fraction
+- id: mark.ceiling_breach
+  family: compliance
+  name: Classification ceiling breach
+  method: docs marked above the corpus's authorized ceiling
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+  unit: docs
+- id: mark.redaction_residue_rate
+  family: compliance
+  name: Redaction residue rate
+  method: partial redaction spans or marking text in body
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+  unit: fraction
+- id: prov.source_histogram
+  family: provenance
+  name: Source distribution
+  method: source_system -> docs and bytes
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+- id: prov.date_range
+  family: provenance
+  name: Collection date range
+  method: min/max collected_at
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+- id: prov.undated_rate
+  family: provenance
+  name: Undated document rate
+  method: docs with no collected_at
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+  unit: fraction
+- id: prov.custody_complete_rate
+  family: provenance
+  name: Custody completeness
+  method: docs with a non-empty custody chain
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+  unit: fraction
+- id: prov.reliability_histogram
+  family: provenance
+  name: Source reliability distribution
+  method: STANAG 2511 rating -> docs, where supplied
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+- id: prov.derived_share
+  family: provenance
+  name: Derived-document share
+  method: docs with a parent_hash (attachments, container members)
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+  unit: fraction
+- id: fit.tokens_per_word
+  family: model_fit
+  name: Tokens per word by language
+  method: cnt.token_count / cnt.word_count per language slice
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+  detector: tokenizer
+- id: fit.over_chunk_rate
+  family: model_fit
+  name: Share of docs over chunk threshold
+  method: docs with cnt.token_count > policy chunk size
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+  unit: fraction
+  detector: tokenizer
+- id: fit.unknown_token_rate
+  family: model_fit
+  name: Unknown / byte-fallback token rate
+  method: unk or byte tokens / total
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: added
+  unit: fraction
+  detector: tokenizer

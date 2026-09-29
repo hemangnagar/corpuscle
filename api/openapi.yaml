@@ -1,0 +1,110 @@
+openapi: 3.1.0
+info:
+  title: Corpuscle API
+  version: 0.0.1
+  description: |
+    Deterministic core exposed to the agent layer and to customer agents through the same surface (REST here; MCP mirrors these operations one-to-one).
+    Scans are asynchronous jobs. Proposals require an approver identity before anything executes.
+servers:
+  - url: /v0
+paths:
+  /corpora:
+    post:
+      summary: Register a corpus
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/CorpusCreate'}}}}
+      responses: {'201': {description: Created, content: {application/json: {schema: {$ref: '#/components/schemas/Corpus'}}}}}
+  /corpora/{corpusId}/versions:
+    post:
+      summary: Register a corpus version from a manifest of sources or a derivation of an existing version
+      parameters: [{$ref: '#/components/parameters/corpusId'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/VersionCreate'}}}}
+      responses: {'201': {description: Created, content: {application/json: {schema: {$ref: '#/components/schemas/Version'}}}}}
+  /corpora/{corpusId}/versions/{versionId}/manifest:
+    get:
+      summary: The signed bundle for this version (DSSE envelope plus records)
+      parameters: [{$ref: '#/components/parameters/corpusId'}, {$ref: '#/components/parameters/versionId'}]
+      responses: {'200': {description: OK, content: {application/json: {schema: {$ref: '#/components/schemas/Bundle'}}}}}
+  /corpora/{corpusId}/versions/{versionId}/derive:
+    post:
+      summary: Record a subset, filter or transform and issue the child version with carried-forward records
+      parameters: [{$ref: '#/components/parameters/corpusId'}, {$ref: '#/components/parameters/versionId'}]
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Derive'}}}}
+      responses: {'201': {description: Child version created, content: {application/json: {schema: {$ref: '#/components/schemas/Version'}}}}}
+  /scans:
+    post:
+      summary: Start a scan job
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/ScanRequest'}}}}
+      responses: {'202': {description: Accepted, content: {application/json: {schema: {$ref: '#/components/schemas/Job'}}}}}
+  /scans/{scanId}:
+    get:
+      summary: Job status, stage and progress
+      parameters: [{$ref: '#/components/parameters/scanId'}]
+      responses: {'200': {description: OK, content: {application/json: {schema: {$ref: '#/components/schemas/Job'}}}}}
+  /scans/{scanId}/results:
+    get:
+      summary: Metric results for a finished scan
+      parameters: [{$ref: '#/components/parameters/scanId'}]
+      responses: {'200': {description: OK, content: {application/json: {schema: {type: array, items: {$ref: '#/components/schemas/Result'}}}}}}
+  /records/{docHash}:
+    get:
+      summary: Per-document record by content hash (categories and counts only; never PII values)
+      parameters: [{name: docHash, in: path, required: true, schema: {type: string}}]
+      responses: {'200': {description: OK}}
+  /metrics:
+    get: {summary: Metric catalog with method cards, responses: {'200': {description: OK}}}
+  /frameworks:
+    get: {summary: Regulatory frameworks available for mapping, responses: {'200': {description: OK}}}
+  /frameworks/{frameworkId}/clauses:
+    get:
+      parameters: [{name: frameworkId, in: path, required: true, schema: {type: string}}]
+      responses: {'200': {description: OK}}
+  /policies/{policyId}:
+    get: {parameters: [{$ref: '#/components/parameters/policyId'}], responses: {'200': {description: OK}}}
+    put: {parameters: [{$ref: '#/components/parameters/policyId'}], responses: {'200': {description: OK}}}
+  /proposals:
+    post:
+      summary: Submit an agent proposal (finding, remediation, scan plan). Nothing executes until approved.
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Proposal'}}}}
+      responses: {'201': {description: Created}}
+  /proposals/{proposalId}/approve:
+    post:
+      summary: Approve with an approver identity; the gate must already have passed
+      parameters: [{name: proposalId, in: path, required: true, schema: {type: string}}]
+      responses: {'200': {description: OK}}
+  /manifests/verify:
+    post:
+      summary: Verify a bundle (same logic as the offline CLI)
+      requestBody: {required: true, content: {application/json: {schema: {$ref: '#/components/schemas/Bundle'}}}}
+      responses: {'200': {description: OK, content: {application/json: {schema: {$ref: '#/components/schemas/VerifyReport'}}}}}
+  /manifests/{manifestHash}/lineage:
+    get:
+      summary: Derivation chain for a manifest
+      parameters: [{name: manifestHash, in: path, required: true, schema: {type: string}}]
+      responses: {'200': {description: OK}}
+  /reports/{reportId}:
+    get:
+      summary: Rendered report for an AO / CLPO audience (JSON; PDF and HTML via Accept)
+      parameters: [{name: reportId, in: path, required: true, schema: {type: string}}]
+      responses: {'200': {description: OK}}
+  /evidence/exports:
+    post: {summary: Push findings to an external governance or transfer target, responses: {'202': {description: Accepted}}}
+  /webhooks:
+    post: {summary: Register a webhook for scan completion and finding changes, responses: {'201': {description: Created}}}
+components:
+  parameters:
+    corpusId: {name: corpusId, in: path, required: true, schema: {type: string}}
+    versionId: {name: versionId, in: path, required: true, schema: {type: string}}
+    scanId: {name: scanId, in: path, required: true, schema: {type: string}}
+    policyId: {name: policyId, in: path, required: true, schema: {type: string}}
+  schemas:
+    CorpusCreate: {type: object, required: [corpus_id], properties: {corpus_id: {type: string}, description: {type: string}, markings: {type: array, items: {type: string}}}}
+    Corpus: {allOf: [{$ref: '#/components/schemas/CorpusCreate'}, {type: object, properties: {created_at: {type: string, format: date-time}}}]}
+    VersionCreate: {type: object, required: [version_id, sources], properties: {version_id: {type: string}, sources: {type: array, items: {type: object, properties: {connector: {type: string}, config: {type: object}}}}}}
+    Version: {type: object, properties: {corpus_id: {type: string}, version_id: {type: string}, merkle_root: {type: string}, document_count: {type: integer}}}
+    Derive: {type: object, required: [child_version_id, relation, doc_hashes], properties: {child_version_id: {type: string}, relation: {type: string, enum: [subset, filter, transform, union]}, doc_hashes: {type: array, items: {type: string}}, description: {type: string}}}
+    ScanRequest: {type: object, required: [corpus_id, version_id], properties: {corpus_id: {type: string}, version_id: {type: string}, analyzers: {type: array, items: {type: string}}, policy_id: {type: string}, sample_seed: {type: integer}}}
+    Job: {type: object, properties: {scan_id: {type: string}, state: {type: string, enum: [queued, running, succeeded, failed, cancelled]}, stage: {type: string}, progress: {type: number}, manifest_hash: {type: string}}}
+    Result: {type: object, properties: {metric_id: {type: string}, method_version: {type: string}, value: {}, unit: {type: string}, scope: {type: string}, distribution: {type: object}}}
+    Proposal: {type: object, required: [kind, agent, payload], properties: {kind: {type: string, enum: [finding, remediation, scan_plan]}, agent: {type: string}, model: {type: string}, payload: {type: object}, evidence: {type: array, items: {type: object}}}}
+    Bundle: {type: object, required: [manifest_dsse, records_jsonl], properties: {manifest_dsse: {type: object}, records_jsonl: {type: string, description: newline-delimited JSON}}}
+    VerifyReport: {type: object, properties: {ok: {type: boolean}, checks: {type: object, additionalProperties: {type: boolean}}, added: {type: array, items: {type: string}}, removed: {type: array, items: {type: string}}, changed: {type: array, items: {type: string}}}}

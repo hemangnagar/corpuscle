@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://corpuscle.dev/schemas/record/v0",
+  "title": "Per-document record",
+  "description": "One JSON object per line in records.jsonl, one per document occurrence, keyed by content hash so it survives renames and moves; byte-identical documents at different locators share a doc_hash, which is what the exact-duplicate metrics count. Never contains PII values: only categories, counts and hashed offsets.",
+  "type": "object",
+  "required": ["doc_hash", "envelope", "metrics"],
+  "additionalProperties": false,
+  "properties": {
+    "doc_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "envelope": {"$ref": "https://corpuscle.dev/schemas/provenance-envelope/v0"},
+    "language": {"type": "object", "properties": {"code": {"type": "string"}, "confidence": {"type": "number"}, "script": {"type": "string"}, "mixed": {"type": "boolean"}}},
+    "metrics": {"type": "object", "description": "metric_id -> value for per-document metrics.", "additionalProperties": true},
+    "pii": {"type": "array", "items": {"type": "object", "required": ["category", "count"], "properties": {"category": {"type": "string"}, "count": {"type": "integer"}, "offset_hashes": {"type": "array", "items": {"type": "string"}}}}},
+    "markings_parsed": {"type": "object", "additionalProperties": true},
+    "flags": {"type": "array", "items": {"type": "string"}}
+  }
+}

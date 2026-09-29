@@ -1,0 +1,4 @@
+2026-09-01 ingest start
+2026-09-01 ingest end
+2026-09-02 scan start
+2026-09-02 scan end

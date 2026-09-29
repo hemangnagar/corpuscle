@@ -1,0 +1,1 @@
+Findings summary. Marking coverage on the sample was incomplete; three documents carried a banner with no portion marks. Recommend re-parse.

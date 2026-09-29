@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://corpuscle.dev/schemas/provenance-envelope/v0",
+  "title": "Provenance envelope",
+  "description": "Captured at ingest for every document. Everything the provenance metric family is computed from lives here; if a connector does not capture it, it is lost.",
+  "type": "object",
+  "required": ["doc_hash", "hash_alg", "size_bytes", "source_system", "source_locator", "ingested_at", "adapter"],
+  "additionalProperties": false,
+  "properties": {
+    "doc_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$", "description": "SHA-256 of the original bytes, before any parsing."},
+    "hash_alg": {"type": "string", "const": "sha256"},
+    "size_bytes": {"type": "integer", "minimum": 0},
+    "media_type": {"type": "string"},
+    "source_system": {"type": "string", "description": "Originating system or collection channel, e.g. s3, sharepoint, mailbox, cds-transfer."},
+    "source_locator": {"type": "string", "description": "Path, URI, message id or object key inside the source system."},
+    "source_id": {"type": "string", "description": "Stable identifier the source assigns, if any."},
+    "collected_at": {"type": "string", "format": "date-time", "description": "When the source says the document was collected or created. Absent = unknown, and that absence is itself a metric."},
+    "ingested_at": {"type": "string", "format": "date-time"},
+    "custody": {
+      "type": "array",
+      "description": "Ordered chain of custody hops the source exposes.",
+      "items": {
+        "type": "object",
+        "required": ["actor", "at"],
+        "additionalProperties": false,
+        "properties": {
+          "actor": {"type": "string"},
+          "at": {"type": "string", "format": "date-time"},
+          "action": {"type": "string"}
+        }
+      }
+    },
+    "markings": {
+      "type": "array",
+      "description": "Markings found on the document as delivered (banner, portion marks, metadata). Raw strings; parsing is a later stage.",
+      "items": {"type": "string"}
+    },
+    "parent_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$", "description": "For attachments and container members: the document this was extracted from."},
+    "adapter": {
+      "type": "object",
+      "required": ["name", "version"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string"},
+        "version": {"type": "string"},
+        "extraction_confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "path": {"type": "string", "description": "e.g. text, ocr, asr — which extraction path was taken."}
+      }
+    },
+    "reliability": {
+      "type": "object",
+      "description": "Source rating, NATO STANAG 2511 style, when the source supplies one.",
+      "additionalProperties": false,
+      "properties": {
+        "source": {"type": "string", "enum": ["A", "B", "C", "D", "E", "F"]},
+        "information": {"type": "string", "enum": ["1", "2", "3", "4", "5", "6"]}
+      }
+    }
+  }
+}

@@ -1,0 +1,1 @@
+Resumen semanal. La canalización de ingesta procesó todos los archivos sin errores. Se añadieron dos fuentes nuevas.

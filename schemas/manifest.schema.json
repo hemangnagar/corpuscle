@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://corpuscle.dev/schemas/manifest/v0",
+  "title": "Corpuscle manifest",
+  "description": "The corpus-level statement. Signed as the predicate of an in-toto Statement inside a DSSE envelope. Per-document records live in records.jsonl beside it, bound by records_hash.",
+  "type": "object",
+  "required": ["manifest_version", "corpus", "run", "records_hash", "records_count", "results", "findings", "agent_runs"],
+  "additionalProperties": false,
+  "properties": {
+    "manifest_version": {"type": "string", "const": "0"},
+    "corpus": {
+      "type": "object",
+      "required": ["corpus_id", "version_id", "merkle_root", "hash_alg", "document_count", "total_bytes"],
+      "additionalProperties": false,
+      "properties": {
+        "corpus_id": {"type": "string"},
+        "version_id": {"type": "string"},
+        "merkle_root": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "hash_alg": {"type": "string", "const": "sha256"},
+        "document_count": {"type": "integer", "minimum": 0},
+        "total_bytes": {"type": "integer", "minimum": 0},
+        "derived_from": {
+          "type": "object",
+          "description": "Present when this corpus is a subset or transform of another. The child carries forward the parent's per-document records and recomputes aggregates.",
+          "required": ["parent_merkle_root", "relation"],
+          "additionalProperties": false,
+          "properties": {
+            "parent_merkle_root": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            "parent_manifest_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+            "relation": {"type": "string", "enum": ["subset", "filter", "transform", "union"]},
+            "description": {"type": "string"}
+          }
+        },
+        "markings": {"type": "array", "items": {"type": "string"}, "description": "Markings that apply to the manifest itself. A manifest describing a classified corpus is classified."}
+      }
+    },
+    "run": {
+      "type": "object",
+      "required": ["run_id", "started_at", "finished_at", "engine", "catalog_version", "policy_version", "pins"],
+      "additionalProperties": false,
+      "properties": {
+        "run_id": {"type": "string"},
+        "started_at": {"type": "string", "format": "date-time"},
+        "finished_at": {"type": "string", "format": "date-time"},
+        "engine": {"type": "string", "description": "e.g. corpuscle/0.0.1 local, corpuscle/0.0.1 pyspark-3.5.1"},
+        "catalog_version": {"type": "string"},
+        "policy_version": {"type": "string"},
+        "sample_seed": {"type": "integer"},
+        "pins": {
+          "type": "object",
+          "description": "Every dependency whose version changes a number. name -> version.",
+          "additionalProperties": {"type": "string"}
+        }
+      }
+    },
+    "records_hash": {"type": "string", "pattern": "^[0-9a-f]{64}$", "description": "SHA-256 of records.jsonl as written."},
+    "records_count": {"type": "integer", "minimum": 0},
+    "results": {
+      "type": "array",
+      "description": "Corpus-level metric results.",
+      "items": {
+        "type": "object",
+        "required": ["metric_id", "method_version", "value"],
+        "additionalProperties": false,
+        "properties": {
+          "metric_id": {"type": "string"},
+          "method_version": {"type": "string"},
+          "value": {},
+          "unit": {"type": "string"},
+          "distribution": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "min": {"type": "number"}, "p5": {"type": "number"}, "p50": {"type": "number"},
+              "p95": {"type": "number"}, "max": {"type": "number"}, "mean": {"type": "number"}, "var": {"type": "number"}
+            }
+          },
+          "scope": {"type": "string", "description": "e.g. all, lang:en, lang:es"},
+          "sample": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {"n": {"type": "integer"}, "of": {"type": "integer"}, "seed": {"type": "integer"}, "strategy": {"type": "string"}}
+          },
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["finding_id", "framework", "clause", "metric_ids", "status", "severity"],
+        "additionalProperties": false,
+        "properties": {
+          "finding_id": {"type": "string"},
+          "framework": {"type": "string"},
+          "clause": {"type": "string"},
+          "metric_ids": {"type": "array", "items": {"type": "string"}},
+          "status": {"type": "string", "enum": ["pass", "flag", "fail", "rejected", "inconclusive"]},
+          "severity": {"type": "string", "enum": ["none", "low", "medium", "high", "critical"]},
+          "observed": {},
+          "threshold": {},
+          "assessment": {"type": "string", "enum": ["real", "artifact", "inconclusive"]},
+          "evidence": {"type": "array", "items": {"type": "object", "required": ["doc_hash"], "properties": {"doc_hash": {"type": "string"}, "offset": {"type": "integer"}, "length": {"type": "integer"}}}},
+          "narrative": {"type": "string"},
+          "remediation": {"type": "object", "properties": {"action": {"type": "string"}, "predicted_effect": {"type": "string"}}},
+          "gate": {"type": "object", "properties": {"rule": {"type": "string"}, "verdict": {"type": "string"}, "reason": {"type": "string"}}},
+          "approved_by": {"type": "string"},
+          "approved_at": {"type": "string", "format": "date-time"}
+        }
+      }
+    },
+    "agent_runs": {
+      "type": "array",
+      "description": "Every agent action taken during the run. Signed with the metrics so the audit trail covers the agents too.",
+      "items": {
+        "type": "object",
+        "required": ["agent", "model", "started_at", "tool_calls"],
+        "additionalProperties": false,
+        "properties": {
+          "agent": {"type": "string"},
+          "model": {"type": "string"},
+          "started_at": {"type": "string", "format": "date-time"},
+          "finished_at": {"type": "string", "format": "date-time"},
+          "tool_calls": {"type": "array", "items": {"type": "object", "required": ["tool", "args_hash"], "properties": {"tool": {"type": "string"}, "args_hash": {"type": "string"}, "result_hash": {"type": "string"}}}},
+          "conclusion": {"type": "string"},
+          "proposal_ids": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
+  }
+}

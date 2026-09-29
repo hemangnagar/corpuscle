@@ -1,0 +1,1 @@
+The source system supplied a collection date for most records. Undated records were concentrated in one mailbox export.
