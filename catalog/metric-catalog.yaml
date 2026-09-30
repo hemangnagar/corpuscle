@@ -19,6 +19,11 @@ detectors:
     version: 2.2.358
     role: PII entity detection
     model: spacy/en_core_web_lg 3.8.0
+  spacy:
+    package: spacy
+    version: 3.8.0
+    model: en_core_web_lg 3.8.0
+    role: NER entity density and salient terms; same model Presidio pins
   ftfy:
     package: ftfy
     version: 6.3.1
@@ -38,6 +43,7 @@ families:
 - compliance
 - provenance
 - model_fit
+- entities
 metrics:
 - id: vol.total_docs
   family: descriptive
@@ -840,3 +846,379 @@ metrics:
   status: added
   unit: fraction
   detector: tokenizer
+- id: read.spache
+  family: readability
+  name: Spache readability
+  method: textstat.spache_readability
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  aggregations:
+  - mean
+  - var
+  - p5
+  - p50
+  - p95
+  detector: textstat
+  note: English-only formula calibrated for primary-grade text; computed on the English slice.
+- id: read.text_standard
+  family: readability
+  name: Consensus grade level
+  method: textstat.text_standard(float_output=True)
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  aggregations:
+  - mean
+  - p50
+  detector: textstat
+  note: Consensus of the other formulas. The existing profiler reported no variance; the median is added.
+- id: vol.total_words
+  family: descriptive
+  name: Total words
+  method: sum of cnt.word_count
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: words
+  detector: textstat
+- id: vol.total_sentences
+  family: descriptive
+  name: Total sentences
+  method: sum of cnt.sentence_count
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: sentences
+  detector: textstat
+- id: vol.total_syllables
+  family: descriptive
+  name: Total syllables
+  method: sum of cnt.syllable_count
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: syllables
+  detector: textstat
+  note: English-calibrated; reported per language slice.
+- id: ent.density.all
+  family: entities
+  name: Entity density, all labels
+  method: spaCy NER entities of any label per 1,000 tokens
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  unit: per 1k tokens
+  aggregations:
+  - mean
+  - var
+  detector: spacy
+  note: Densities only. Entity text is never stored; records carry categories and counts, as with PII.
+- id: ent.density.person
+  family: entities
+  name: Entity density, PERSON
+  method: spaCy NER entities labelled PERSON per 1,000 tokens
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  unit: per 1k tokens
+  aggregations:
+  - mean
+  - var
+  detector: spacy
+- id: ent.density.norp
+  family: entities
+  name: Entity density, NORP
+  method: spaCy NER entities labelled NORP per 1,000 tokens
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  unit: per 1k tokens
+  aggregations:
+  - mean
+  - var
+  detector: spacy
+- id: ent.density.fac
+  family: entities
+  name: Entity density, FAC
+  method: spaCy NER entities labelled FAC per 1,000 tokens
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  unit: per 1k tokens
+  aggregations:
+  - mean
+  - var
+  detector: spacy
+- id: ent.density.org
+  family: entities
+  name: Entity density, ORG
+  method: spaCy NER entities labelled ORG per 1,000 tokens
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  unit: per 1k tokens
+  aggregations:
+  - mean
+  - var
+  detector: spacy
+- id: ent.density.gpe
+  family: entities
+  name: Entity density, GPE
+  method: spaCy NER entities labelled GPE per 1,000 tokens
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  unit: per 1k tokens
+  aggregations:
+  - mean
+  - var
+  detector: spacy
+- id: ent.density.loc
+  family: entities
+  name: Entity density, LOC
+  method: spaCy NER entities labelled LOC per 1,000 tokens
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  unit: per 1k tokens
+  aggregations:
+  - mean
+  - var
+  detector: spacy
+- id: ent.density.product
+  family: entities
+  name: Entity density, PRODUCT
+  method: spaCy NER entities labelled PRODUCT per 1,000 tokens
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  unit: per 1k tokens
+  aggregations:
+  - mean
+  - var
+  detector: spacy
+- id: ent.density.event
+  family: entities
+  name: Entity density, EVENT
+  method: spaCy NER entities labelled EVENT per 1,000 tokens
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  unit: per 1k tokens
+  aggregations:
+  - mean
+  - var
+  detector: spacy
+- id: ent.density.work_of_art
+  family: entities
+  name: Entity density, WORK_OF_ART
+  method: spaCy NER entities labelled WORK_OF_ART per 1,000 tokens
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  unit: per 1k tokens
+  aggregations:
+  - mean
+  - var
+  detector: spacy
+- id: ent.density.law
+  family: entities
+  name: Entity density, LAW
+  method: spaCy NER entities labelled LAW per 1,000 tokens
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  unit: per 1k tokens
+  aggregations:
+  - mean
+  - var
+  detector: spacy
+- id: ent.density.language
+  family: entities
+  name: Entity density, LANGUAGE
+  method: spaCy NER entities labelled LANGUAGE per 1,000 tokens
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  unit: per 1k tokens
+  aggregations:
+  - mean
+  - var
+  detector: spacy
+- id: ent.density.date
+  family: entities
+  name: Entity density, DATE
+  method: spaCy NER entities labelled DATE per 1,000 tokens
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  unit: per 1k tokens
+  aggregations:
+  - mean
+  - var
+  detector: spacy
+- id: ent.density.time
+  family: entities
+  name: Entity density, TIME
+  method: spaCy NER entities labelled TIME per 1,000 tokens
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  unit: per 1k tokens
+  aggregations:
+  - mean
+  - var
+  detector: spacy
+- id: ent.density.percent
+  family: entities
+  name: Entity density, PERCENT
+  method: spaCy NER entities labelled PERCENT per 1,000 tokens
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  unit: per 1k tokens
+  aggregations:
+  - mean
+  - var
+  detector: spacy
+- id: ent.density.money
+  family: entities
+  name: Entity density, MONEY
+  method: spaCy NER entities labelled MONEY per 1,000 tokens
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  unit: per 1k tokens
+  aggregations:
+  - mean
+  - var
+  detector: spacy
+- id: ent.density.quantity
+  family: entities
+  name: Entity density, QUANTITY
+  method: spaCy NER entities labelled QUANTITY per 1,000 tokens
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  unit: per 1k tokens
+  aggregations:
+  - mean
+  - var
+  detector: spacy
+- id: ent.density.ordinal
+  family: entities
+  name: Entity density, ORDINAL
+  method: spaCy NER entities labelled ORDINAL per 1,000 tokens
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  unit: per 1k tokens
+  aggregations:
+  - mean
+  - var
+  detector: spacy
+- id: ent.density.cardinal
+  family: entities
+  name: Entity density, CARDINAL
+  method: spaCy NER entities labelled CARDINAL per 1,000 tokens
+  method_version: 0.1.0
+  level: document
+  scope: lang:en
+  status: baseline
+  unit: per 1k tokens
+  aggregations:
+  - mean
+  - var
+  detector: spacy
+- id: lex.salient_terms
+  family: lexical
+  name: Most common salient terms
+  method: top 50 lemmatized noun chunks by document frequency, stopwords removed, ties by total frequency
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: terms
+  detector: spacy
+  note: The one metric whose value is text. It is content, so it carries the corpus markings and a policy may suppress it.
+- id: int.empty_count
+  family: integrity
+  name: Empty document count
+  method: docs with zero extractable text after parsing
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: docs
+  note: Distinct from int.near_empty_rate (under 20 tokens). Empty usually means a failed parse, not a short document.
+- id: int.empty_rate
+  family: integrity
+  name: Empty document rate
+  method: int.empty_count / vol.total_docs
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: fraction
+- id: int.large_count
+  family: integrity
+  name: Large document count
+  method: docs with size_bytes above the policy threshold (default 10 MiB)
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: docs
+  note: Size in bytes at ingest. Token-based oversize is fit.over_chunk_rate.
+- id: int.large_rate
+  family: integrity
+  name: Large document rate
+  method: int.large_count / vol.total_docs
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: fraction
+- id: prov.duplicate_id_count
+  family: provenance
+  name: Duplicate source id count
+  method: docs whose source_id repeats within a source_system
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: docs
+  note: Different content under one id is a source integrity problem; identical content is dup.exact_count. Undefined when source_id is absent.
+- id: prov.duplicate_id_rate
+  family: provenance
+  name: Duplicate source id rate
+  method: prov.duplicate_id_count / docs with a source_id
+  method_version: 0.1.0
+  level: corpus
+  scope: all
+  status: baseline
+  unit: fraction

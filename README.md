@@ -40,7 +40,7 @@ Phase 1, first slice: the duplication family and the finding gate, so a scan end
 | `schemas/manifest.schema.json` | Corpus-level statement: identity (Merkle root), run pins, results, findings, agent runs |
 | `schemas/record.schema.json` | Per-document record, keyed by content hash. Categories and counts only, never PII values |
 | `schemas/provenance-envelope.schema.json` | What every connector must capture at ingest |
-| `catalog/metric-catalog.yaml` | 66 metric IDs across nine families with method versions and detector pins; the existing 54 map onto the `baseline` IDs |
+| `catalog/metric-catalog.yaml` | 97 metric IDs across ten families with method versions and detector pins; the existing profiler's 105 metrics map onto the `baseline` IDs |
 | `schemas/policy.schema.json`, `policy/default.yaml` | Finding policy: which measured values count as a finding, under which clause, at which severity. Its id, version and content hash travel in the signed manifest |
 | `api/openapi.yaml` | Resource model and async job pattern; MCP mirrors it one-to-one |
 | `src/corpuscle/` | Hashing and Merkle proofs, envelope validation, analyzer contract, bundle builder, finding gate, DSSE signing over an in-toto Statement, offline verifier, CLI |
