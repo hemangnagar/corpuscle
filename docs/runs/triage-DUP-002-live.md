@@ -153,3 +153,53 @@ Proposal `prop-e1e8af0bd5cb`: agent `triage-investigator`, model `claude-opus-5-
 | 6 | `diff_documents` | `cf0a4fc934a9a4504e4c78bcae1d26cd1618d9216baef794a9b4fede5a676c22` | `f7bf57c5557372d2e0886e397b1d6e0f56e3bc2a3430c4a5e7f58dd8032e3460` |
 | 7 | `diff_documents` | `deabdaba4eede09d81170a5e53995835bd9b898ed271313262d010e93a4abcee` | `fda8eb93b557049650bdfd14865b6da05cc02b9461baac69424fa506b78a9183` |
 | 8 | `propose` | `59ff64be3a5b1ae9d5ef55b960d7a5dcf5f5c3269bc68c5845e66214e9db9aa1` | `27f5f92463b5942ac2f2f1c21c601f362fe3f0142a92a5e3b39fe448db6261a4` |
+
+## Approval
+
+The proposal was approved from the parent session with the same proposal JSON placed beside a fresh scan of the same corpus (identical Merkle root `d0ad149212ec3606…` and identical findings), then verified offline.
+
+```
+$ corpuscle approve live prop-e1e8af0bd5cb --approver "Hemang Nagar (approved via Claude Code)" --key keys/dev.key.pem
+approved prop-e1e8af0bd5cb by Hemang Nagar (approved via Claude Code); manifest re-signed
+  DUP-002 fail high  assessment=real  agent_runs=1
+
+$ corpuscle verify live --pub keys/dev.pub.pem
+PASS  signature
+PASS  manifest schema
+PASS  records hash
+PASS  records count
+PASS  merkle root
+PASS  statement subject
+PASS  corpus files match records
+RESULT  verified
+```
+
+The finding DUP-002 in the re-signed manifest:
+
+```json
+{
+ "finding_id": "DUP-002",
+ "status": "fail",
+ "severity": "high",
+ "observed": 0.285714,
+ "threshold": {
+  "fail": {
+   "op": ">",
+   "value": 0.1
+  },
+  "flag": {
+   "op": ">",
+   "value": 0.02
+  }
+ },
+ "assessment": "real",
+ "approved_by": "Hemang Nagar (approved via Claude Code)",
+ "approved_at": "2026-09-30T16:28:51Z",
+ "remediation": {
+  "action": "Keep one authoritative version of each pair (likely report-11-rev2.txt, and whichever bulletin-12 version the data owner confirms), take the other out of the corpus, and have the core re-measure.",
+  "predicted_effect": "With no near-duplicate pairs left among these documents, dup.near_rate should drop to zero or close to it, below both the flag and fail thresholds. The core's re-measurement needs to confirm this."
+ }
+}
+```
+
+`agent_runs` holds one entry: `triage-investigator` on `claude-opus-5-5`, eight hashed tool calls, proposal `prop-e1e8af0bd5cb`. Observed value, threshold, status, severity, results, records and Merkle root are unchanged from the original scan.
