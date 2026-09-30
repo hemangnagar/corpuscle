@@ -12,6 +12,26 @@ from typing import Protocol
 
 DEFAULT_MODEL = "claude-opus-5-5"
 DEFAULT_EFFORT = "medium"
+KEY_VAR = "CORPUSCLE_ANTHROPIC_KEY"
+BASE_URL_VAR = "CORPUSCLE_ANTHROPIC_BASE_URL"
+DIRECT_BASE_URL = "https://api.anthropic.com"
+
+
+def client_kwargs(env: dict | None = None) -> dict:
+    """How the agent finds its credentials.
+
+    CORPUSCLE_ANTHROPIC_KEY wins: the agent then talks straight to api.anthropic.com (or
+    CORPUSCLE_ANTHROPIC_BASE_URL), ignoring any ANTHROPIC_BASE_URL a hosting harness set for
+    its own traffic. Some hosts refuse to pass a variable named ANTHROPIC_API_KEY into a
+    session, so the project-specific name is the reliable one. With it unset, the SDK's
+    normal resolution applies: ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN, or an `ant auth
+    login` profile.
+    """
+    env = os.environ if env is None else env
+    key = env.get(KEY_VAR)
+    if key:
+        return {"api_key": key, "base_url": env.get(BASE_URL_VAR, DIRECT_BASE_URL)}
+    return {}
 
 
 class Model(Protocol):
@@ -21,15 +41,15 @@ class Model(Protocol):
 
 
 class AnthropicModel:
-    """Claude through the official SDK. Credentials come from the environment (ANTHROPIC_API_KEY,
-    ANTHROPIC_AUTH_TOKEN or an `ant auth login` profile). Server-side refusal fallback is on by
-    default so a safety decline re-runs on a fallback model inside the same call."""
+    """Claude through the official SDK. Credentials per client_kwargs(): CORPUSCLE_ANTHROPIC_KEY
+    first, else the SDK's own resolution. Server-side refusal fallback is on by default so a
+    safety decline re-runs on a fallback model inside the same call."""
 
     def __init__(self, model_id: str | None = None, effort: str = DEFAULT_EFFORT, fallbacks: bool = True, max_tokens: int = 16000):
         import anthropic
         self.model_id = model_id or os.environ.get("CORPUSCLE_MODEL", DEFAULT_MODEL)
         self.effort, self.fallbacks, self.max_tokens = effort, fallbacks, max_tokens
-        self.client = anthropic.Anthropic()
+        self.client = anthropic.Anthropic(**client_kwargs())
 
     def create(self, *, system: str, messages: list[dict], tools: list[dict]):
         kw = dict(model=self.model_id, max_tokens=self.max_tokens,

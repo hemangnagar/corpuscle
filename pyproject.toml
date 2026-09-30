@@ -9,7 +9,7 @@ dependencies = [
   "cryptography>=42",
   "jsonschema>=4.20",
   "PyYAML>=6.0",
-  "datasketch>=1.6.5",
+  "datasketch>=1.6.5,<2",
 ]
 
 [project.optional-dependencies]

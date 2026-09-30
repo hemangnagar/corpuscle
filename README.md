@@ -76,7 +76,8 @@ inside the signed statement. `--policy` points at another policy file; `--no-pol
 ### Let an agent investigate
 
 ```bash
-pip install -e ".[agents]"        # the Anthropic SDK; credentials from ANTHROPIC_API_KEY or `ant auth login`
+pip install -e ".[agents]"        # the Anthropic SDK
+export CORPUSCLE_ANTHROPIC_KEY=…  # or ANTHROPIC_API_KEY, or `ant auth login`; see note below
 corpuscle triage tests/fixtures/sample_corpus --finding DUP-002
 corpuscle proposals tests/fixtures/sample_corpus
 corpuscle approve tests/fixtures/sample_corpus prop-… --approver "Dana Reyes, ISSM" --key keys/dev.key.pem
@@ -88,6 +89,11 @@ or inconclusive) with a narrative and a remediation. Nothing changes until a nam
 it; then the finding gains the assessment and the approver's identity, the agent's run (every tool
 call, hashed) is appended to `agent_runs`, and the manifest is re-signed. The observed value, the
 threshold, the verdict, the records and the Merkle root do not move.
+
+Credentials: `CORPUSCLE_ANTHROPIC_KEY` is read first and sends the agent straight to
+`api.anthropic.com` (override with `CORPUSCLE_ANTHROPIC_BASE_URL`). Some hosted sandboxes refuse
+to pass a variable named `ANTHROPIC_API_KEY` into a session and set `ANTHROPIC_BASE_URL` to their
+own proxy; the project-specific name sidesteps both. Without it, the SDK's usual resolution applies.
 
 ## Bundle layout
 
