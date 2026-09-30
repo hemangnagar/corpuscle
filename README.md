@@ -34,6 +34,7 @@ The objection this design is built for is "the model will take care of data qual
 
 Phase 0: the schemas that everything else writes to, and the smallest test that proves the architecture.
 Phase 1, first slice: the duplication family and the finding gate, so a scan ends in a signed finding.
+Phase 3, first slice: the triage investigator, a proposal store and approval, so an agent's work is signed beside the numbers. See [docs/architecture.md](docs/architecture.md).
 
 | Path | What |
 |---|---|
@@ -44,6 +45,8 @@ Phase 1, first slice: the duplication family and the finding gate, so a scan end
 | `schemas/policy.schema.json`, `policy/default.yaml` | Finding policy: which measured values count as a finding, under which clause, at which severity. Its id, version and content hash travel in the signed manifest |
 | `api/openapi.yaml` | Resource model and async job pattern; MCP mirrors it one-to-one |
 | `src/corpuscle/` | Hashing and Merkle proofs, envelope validation, analyzer contract, bundle builder, finding gate, DSSE signing over an in-toto Statement, offline verifier, CLI |
+| `src/corpuscle/tools.py`, `src/corpuscle/proposals.py` | The tool surface agents investigate through (every call hashed into the log; the only write is `propose`) and the proposal store with named approval, which amends and re-signs the manifest |
+| `src/corpuscle_agents/` | The agent layer, the only code that calls a model. Triage investigator over the Anthropic SDK, plus a scripted model for tests and offline demos |
 | `src/corpuscle/analyzers/duplication.py` | Exact duplicates from the content hash; near duplicates by MinHash (128 perms, 5-word shingles) with a recall-weighted LSH candidate net confirmed at the 0.8 threshold |
 | `tests/` | Fourteen-document round trip: build, sign, verify; tamper a document, the records, the manifest; wrong key; single-document Merkle proof; derived subset. Gate: findings land in the signed manifest with the flagged documents as evidence, pass on a clean subset, go inconclusive when a metric is missing, and are deterministic |
 
@@ -70,6 +73,22 @@ inside the signed statement. `--policy` points at another policy file; `--no-pol
 
 `verify` needs no server and no network: a directory, its `.corpuscle/` bundle, and a public key.
 
+### Let an agent investigate
+
+```bash
+pip install -e ".[agents]"        # the Anthropic SDK; credentials from ANTHROPIC_API_KEY or `ant auth login`
+corpuscle triage tests/fixtures/sample_corpus --finding DUP-002
+corpuscle proposals tests/fixtures/sample_corpus
+corpuscle approve tests/fixtures/sample_corpus prop-… --approver "Dana Reyes, ISSM" --key keys/dev.key.pem
+corpuscle verify tests/fixtures/sample_corpus --pub keys/dev.pub.pem
+```
+
+The investigator reads the finding, diffs the evidence, and proposes an assessment (real, artifact
+or inconclusive) with a narrative and a remediation. Nothing changes until a named approver accepts
+it; then the finding gains the assessment and the approver's identity, the agent's run (every tool
+call, hashed) is appended to `agent_runs`, and the manifest is re-signed. The observed value, the
+threshold, the verdict, the records and the Merkle root do not move.
+
 ## Bundle layout
 
 ```
@@ -95,5 +114,5 @@ inside the signed statement. `--policy` points at another policy file; `--no-pol
 | 0 | This commit: schemas, catalog, API spec, round-trip test |
 | 1 | Plaintext, Office, PDF, email and XML adapters; PySpark runner (local mode for small corpora); banner and portion-mark parser; language, duplication, integrity, compliance and provenance families; finding gate; report renderer |
 | 2 | Descriptive, lexical and readability families (the `baseline` continuity set); framework mapping and policy |
-| 3 | Agent layer (scan planner, triage investigator, report author) over REST and MCP; proposals and approvals |
+| 3 | Agent layer over REST and MCP. Landed: triage investigator, proposals, approval. Next: scan planner, report author, MCP server |
 | 4 | Government packaging: OpenTDF transfer package, DoD PKI signer, ISM marking parser, offline install bundle |

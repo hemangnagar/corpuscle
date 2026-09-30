@@ -95,5 +95,32 @@ def build(out_dir, *, corpus_id: str, version_id: str, docs: list[dict], signers
     return manifest
 
 
+AMENDABLE_FINDING_KEYS = ("assessment", "narrative", "remediation", "approved_by", "approved_at")
+
+
+def amend(bundle_root, *, findings_patch: dict[str, dict], agent_runs: list[dict], signers: list[Signer]) -> dict:
+    """Add approved agent output to an existing manifest and re-sign it.
+
+    Only assessment, narrative, remediation and the approver fields may change on a finding, and
+    agent_runs only grows. Records, results, corpus identity and the gate's verdicts are untouched,
+    so the statement's subject (the Merkle root) is the same and the old records_hash still binds.
+    """
+    bundle = Path(bundle_root) / BUNDLE_DIR
+    manifest = json.loads((bundle / "manifest.json").read_text())
+    by_id = {f["finding_id"]: f for f in manifest["findings"]}
+    for fid, patch in findings_patch.items():
+        if fid not in by_id:
+            raise KeyError(f"no finding {fid}")
+        bad = [k for k in patch if k not in AMENDABLE_FINDING_KEYS]
+        if bad:
+            raise ValueError(f"finding {fid}: {', '.join(bad)} cannot be amended")
+        by_id[fid].update(patch)
+    manifest["agent_runs"].extend(agent_runs)
+    validate(manifest, "manifest.schema.json")
+    (bundle / "manifest.json").write_text(json.dumps(manifest, indent=1, sort_keys=True))
+    (bundle / "manifest.dsse.json").write_text(json.dumps(sign_manifest(manifest, signers), indent=1))
+    return manifest
+
+
 def manifest_hash(bundle_dir) -> str:
     return sha256_bytes((Path(bundle_dir) / BUNDLE_DIR / "manifest.json").read_bytes())
