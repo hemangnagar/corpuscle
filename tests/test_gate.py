@@ -173,11 +173,19 @@ def test_flag_band_and_inconclusive(corpus, signer):
     assert m["run"]["pins"]["policy:t"] == gate.policy_hash(policy)
 
 
-def test_invalid_policy_rejected(tmp_path):
+def test_invalid_policy_rejected_with_a_readable_message(tmp_path):
     bad = tmp_path / "bad.yaml"
     bad.write_text("policy_id: x\npolicy_version: '1'\nframework: f\nrules:\n  - rule_id: R\n    clause: c\n    title: t\n    metric_id: m\n    severity: {fail: 'urgent'}\n")
-    with pytest.raises(Exception):
+    with pytest.raises(gate.PolicyError, match=r"rules/0/severity/fail"):
         gate.load_policy(bad)
+
+
+def test_numeric_version_is_accepted_as_string(tmp_path):
+    """YAML reads 2026.09 as a float; a version is a label, so it is taken as written."""
+    p = tmp_path / "p.yaml"
+    p.write_text("policy_id: acme\npolicy_version: 2026.09\nframework: acme\nrules: []\n")
+    pol = gate.load_policy(p)
+    assert pol["policy_version"] == "2026.09" and gate.policy_version(pol) == "acme/2026.09"
 
 
 def test_agent_findings_append_after_gate(corpus, signer):

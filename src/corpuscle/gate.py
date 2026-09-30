@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import operator
 from pathlib import Path
+import jsonschema
 import yaml
 
 from .envelope import validate
@@ -24,6 +25,10 @@ POLICY_DIR = Path(__file__).resolve().parents[2] / "policy"
 DEFAULT_POLICY = POLICY_DIR / "default.yaml"
 EVIDENCE_LIMIT = 50
 
+class PolicyError(ValueError):
+    """The policy file is not usable. The message names the file and the offending field."""
+
+
 _OPS = {">": operator.gt, ">=": operator.ge, "<": operator.lt, "<=": operator.le, "==": operator.eq, "!=": operator.ne}
 
 
@@ -31,7 +36,16 @@ def load_policy(path=DEFAULT_POLICY) -> dict:
     """Load and validate a policy file; attach its content hash as _hash (stripped from the manifest)."""
     raw = Path(path).read_bytes()
     policy = yaml.safe_load(raw)
-    validate(policy, "policy.schema.json")
+    if not isinstance(policy, dict):
+        raise PolicyError(f"{path}: not a policy document")
+    for k in ("policy_id", "policy_version"):
+        if isinstance(policy.get(k), (int, float)):  # YAML reads 2026.09 or 1.0 as a number
+            policy[k] = str(policy[k])
+    try:
+        validate(policy, "policy.schema.json")
+    except jsonschema.ValidationError as e:
+        where = "/".join(str(x) for x in e.absolute_path) or "top level"
+        raise PolicyError(f"{path}: {e.message} (at {where})") from e
     policy["_hash"] = sha256_bytes(raw)
     return policy
 
