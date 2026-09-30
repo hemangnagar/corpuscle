@@ -1,4 +1,4 @@
-"""Ten-document round trip: hash, build, sign, verify, tamper, derive.
+"""Fourteen-document round trip: hash, build, sign, verify, tamper, derive.
 
 This is the smallest test that proves the architecture: the bundle is the only
 artifact, it is verifiable offline, and every change to the corpus is detected.
@@ -34,24 +34,30 @@ def _scan(corpus, signer, **kw):
 
 def test_build_and_verify(corpus, signer):
     m = _scan(corpus, signer)
-    assert m["corpus"]["document_count"] == 10
+    assert m["corpus"]["document_count"] == 14
     assert (corpus / BUNDLE_DIR / "manifest.dsse.json").exists()
     rep = verify(corpus, [signer.verifier()], corpus_dir=corpus)
     assert rep.ok, str(rep)
 
 
 def test_deterministic_root(corpus, signer):
+    """Same corpus, same root and same records. Only ingested_at, which is provenance, may differ."""
     m1 = _scan(corpus, signer)
+    r1 = (corpus / BUNDLE_DIR / "records.jsonl").read_text()
     m2 = _scan(corpus, signer)
+    r2 = (corpus / BUNDLE_DIR / "records.jsonl").read_text()
     assert m1["corpus"]["merkle_root"] == m2["corpus"]["merkle_root"]
-    assert m1["records_hash"] == m2["records_hash"]
+    strip = lambda text: [{**json.loads(l), "envelope": {k: v for k, v in json.loads(l)["envelope"].items() if k != "ingested_at"}}
+                          for l in text.splitlines()]
+    assert strip(r1) == strip(r2)
+    assert m1["results"] == m2["results"] and m1["findings"] == m2["findings"]
 
 
 def test_exact_duplicates_share_hash(corpus, signer):
     m = _scan(corpus, signer)
     recs = [json.loads(l) for l in (corpus / BUNDLE_DIR / "records.jsonl").read_text().splitlines()]
     hashes = [r["doc_hash"] for r in recs]
-    assert len(hashes) == 10 and len(set(hashes)) == 9  # memo-01 and memo-04 are byte-identical
+    assert len(hashes) == 14 and len(set(hashes)) == 13  # memo-01 and memo-04 are byte-identical
 
 
 def test_tamper_document_detected(corpus, signer):
@@ -129,7 +135,7 @@ def test_statement_subject_is_merkle_root(corpus, signer):
 def test_volume_results_present(corpus, signer):
     m = _scan(corpus, signer)
     by_id = {r["metric_id"]: r for r in m["results"]}
-    assert by_id["vol.total_docs"]["value"] == 10
+    assert by_id["vol.total_docs"]["value"] == 14
     assert by_id["vol.total_tokens"]["value"] > 0
     assert "p95" in by_id["cnt.token_count"]["distribution"]
     assert "analyzer:volume" in m["run"]["pins"]

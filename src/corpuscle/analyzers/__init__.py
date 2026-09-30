@@ -9,6 +9,10 @@ PySpark (mapPartitions for per_document, a reduce for corpus):
 
 Every analyzer pins the detector versions it depends on; the runner records them
 in manifest.run.pins so a result can be regenerated a year later.
+
+Scratch values: a per_document key prefixed "_" (a MinHash signature, say) is kept
+in memory for the corpus step and stripped before records are written. corpus() may
+append to a record's "flags" so the finding gate can cite the documents as evidence.
 """
 from __future__ import annotations
 from dataclasses import dataclass, field

@@ -4,6 +4,7 @@ import argparse, sys
 from pathlib import Path
 
 from .envelope import make_envelope
+from .gate import DEFAULT_POLICY
 from .manifest import build
 from .signing import Ed25519Signer, Ed25519Verifier
 from .verify import verify
@@ -29,6 +30,8 @@ def main(argv=None):
     s = sub.add_parser("scan", help="build and sign a bundle for a directory of documents")
     s.add_argument("corpus_dir"); s.add_argument("--corpus-id", required=True); s.add_argument("--version-id", required=True)
     s.add_argument("--key", required=True, help="private key PEM"); s.add_argument("--keyid", default="dev")
+    s.add_argument("--policy", default=None, help="finding policy YAML (default: policy/default.yaml)")
+    s.add_argument("--no-policy", action="store_true", help="measure only; write no findings")
 
     v = sub.add_parser("verify", help="verify a bundle offline against a public key")
     v.add_argument("corpus_dir"); v.add_argument("--pub", required=True); v.add_argument("--keyid", default="dev")
@@ -41,9 +44,14 @@ def main(argv=None):
         print(f"wrote {out}/{a.keyid}.key.pem and {out}/{a.keyid}.pub.pem")
     elif a.cmd == "scan":
         cd = Path(a.corpus_dir)
+        policy = None if a.no_policy else (a.policy or DEFAULT_POLICY)
         m = build(cd, corpus_id=a.corpus_id, version_id=a.version_id, docs=list(_docs_from_dir(cd)),
-                  signers=[Ed25519Signer.from_pem(a.key, a.keyid)])
+                  signers=[Ed25519Signer.from_pem(a.key, a.keyid)], policy=policy)
         print(f"bundle written to {cd}/.corpuscle  root={m['corpus']['merkle_root'][:16]}…  docs={m['corpus']['document_count']}")
+        if m["findings"]:
+            print(f"policy {m['run']['policy_version']}")
+            for f in m["findings"]:
+                print(f"  {f['status'].upper():<12} {f['severity']:<8} {f['finding_id']:<8} {f['clause']:<20} {f['gate'].get('reason', '')}")
     elif a.cmd == "verify":
         rep = verify(a.corpus_dir, [Ed25519Verifier.from_pem(a.pub, a.keyid)],
                      corpus_dir=None if a.no_files else a.corpus_dir)

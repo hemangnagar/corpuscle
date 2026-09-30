@@ -1,0 +1,32 @@
+# Default finding policy. What counts as a finding, not what to run.
+#
+# Which analyzers ran, and with which detector pins, is recorded in manifest.run.
+# This file's id and version go in run.policy_version and its SHA-256 in run.pins,
+# so every finding in a signed manifest can be regenerated from the same inputs.
+#
+# Fail is checked before flag. A metric the run did not report yields an
+# inconclusive finding, never silence.
+policy_id: corpuscle-default
+policy_version: 0.1.0
+framework: corpuscle-default
+description: Baseline thresholds for a corpus intended for retrieval or training use.
+evidence_limit: 50
+rules:
+  - rule_id: DUP-001
+    clause: duplication.exact
+    title: Exact duplicate rate
+    metric_id: dup.exact_rate
+    flag: {op: ">", value: 0.01}
+    fail: {op: ">", value: 0.10}
+    severity: {flag: low, fail: medium}
+    evidence_flag: exact_duplicate
+    rationale: Byte-identical copies inflate volume counts and are retrieved as one document many times.
+  - rule_id: DUP-002
+    clause: duplication.near
+    title: Near-duplicate rate
+    metric_id: dup.near_rate
+    flag: {op: ">", value: 0.02}
+    fail: {op: ">", value: 0.10}
+    severity: {flag: medium, fail: high}
+    evidence_flag: near_duplicate
+    rationale: Near duplicates degrade retrieval diversity and over-weight their content in training; a model sees none of this about its own corpus.

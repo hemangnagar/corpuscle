@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://corpuscle.dev/schemas/policy/v0",
+  "title": "Finding policy",
+  "description": "Which measured values count as a finding, under which framework clause, at which severity. Not a pipeline configuration: which analyzers run and with which pins is recorded in manifest.run. The policy's id and version go in run.policy_version and its content hash in run.pins so findings are reproducible.",
+  "type": "object",
+  "required": ["policy_id", "policy_version", "framework", "rules"],
+  "additionalProperties": false,
+  "properties": {
+    "policy_id": {"type": "string"},
+    "policy_version": {"type": "string"},
+    "framework": {"type": "string", "description": "Framework findings are filed under, e.g. corpuscle-default; framework mapping in Phase 2 adds others."},
+    "description": {"type": "string"},
+    "evidence_limit": {"type": "integer", "minimum": 0, "description": "Maximum doc_hashes attached as evidence per finding (default 50)."},
+    "rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["rule_id", "clause", "title", "metric_id", "severity"],
+        "additionalProperties": false,
+        "properties": {
+          "rule_id": {"type": "string", "description": "Becomes finding_id. Stable across policy versions."},
+          "clause": {"type": "string"},
+          "title": {"type": "string"},
+          "metric_id": {"type": "string"},
+          "scope": {"type": "string", "default": "all"},
+          "flag": {"$ref": "#/$defs/threshold"},
+          "fail": {"$ref": "#/$defs/threshold"},
+          "severity": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "flag": {"$ref": "#/$defs/severity"},
+              "fail": {"$ref": "#/$defs/severity"}
+            }
+          },
+          "evidence_flag": {"type": "string", "description": "Record flag whose bearers are attached as evidence when the rule flags or fails."},
+          "rationale": {"type": "string"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "threshold": {
+      "type": "object",
+      "required": ["op", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "op": {"type": "string", "enum": [">", ">=", "<", "<=", "==", "!="]},
+        "value": {}
+      }
+    },
+    "severity": {"type": "string", "enum": ["low", "medium", "high", "critical"]}
+  }
+}
