@@ -95,7 +95,8 @@ def main(argv=None):
         except TypeError as e:
             if "authentication" not in str(e).lower():
                 raise
-            sys.exit("triage: no model credentials. Set ANTHROPIC_API_KEY, or run `ant auth login`; the agent never runs without them.")
+            sys.exit("triage: no model credentials. Set CORPUSCLE_ANTHROPIC_KEY (or ANTHROPIC_API_KEY, or run `ant auth login`); "
+                     "the agent never runs without them.")
         _print_proposal(pr)
     elif a.cmd == "proposals":
         for pr in store.list_proposals(a.corpus_dir):

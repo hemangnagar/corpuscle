@@ -14,7 +14,7 @@ from corpuscle.manifest import BUNDLE_DIR, build
 from corpuscle.signing import Ed25519Signer
 from corpuscle.tools import Investigation, TOOL_SPECS
 from corpuscle.verify import verify
-from corpuscle_agents.model import ScriptedModel, text, tool_use
+from corpuscle_agents.model import ScriptedModel, client_kwargs, text, tool_use
 from corpuscle_agents.triage import AGENT, run_triage
 
 FIXTURE = Path(__file__).parent / "fixtures" / "sample_corpus"
@@ -213,3 +213,23 @@ def test_amended_manifest_still_detects_tampering(scanned, signer):
     (scanned / "memo-02.txt").write_text("edited")
     rep = verify(scanned, [signer.verifier()], corpus_dir=scanned)
     assert not rep.ok and rep.changed == ["memo-02.txt"]
+
+
+# credentials
+
+def test_project_key_goes_straight_to_the_api():
+    assert client_kwargs({}) == {}
+    assert client_kwargs({"ANTHROPIC_API_KEY": "x"}) == {}  # SDK resolves that one itself
+    kw = client_kwargs({"CORPUSCLE_ANTHROPIC_KEY": "sk-test", "ANTHROPIC_BASE_URL": "https://harness.example"})
+    assert kw == {"api_key": "sk-test", "base_url": "https://api.anthropic.com"}  # harness proxy ignored
+    kw = client_kwargs({"CORPUSCLE_ANTHROPIC_KEY": "sk-test", "CORPUSCLE_ANTHROPIC_BASE_URL": "https://bedrock.example"})
+    assert kw["base_url"] == "https://bedrock.example"
+
+
+def test_anthropic_model_constructs_with_project_key(monkeypatch):
+    pytest.importorskip("anthropic")
+    from corpuscle_agents.model import AnthropicModel
+    monkeypatch.setenv("CORPUSCLE_ANTHROPIC_KEY", "sk-test")
+    monkeypatch.setenv("ANTHROPIC_BASE_URL", "https://harness.example")
+    m = AnthropicModel()
+    assert str(m.client.base_url).startswith("https://api.anthropic.com") and m.model_id == "claude-opus-5-5"
