@@ -33,6 +33,9 @@ INDEX_MARGIN = 0.2          # LSH indexes at threshold - margin; confirmation us
 INDEX_WEIGHTS = (0.1, 0.9)  # (false positive, false negative): pay in candidates, not in recall
 SCRATCH = "_dup.minhash"
 _WORD = re.compile(r"\w+", re.UNICODE)
+# datasketch 2.0 names the hashing scheme a MinHash was built with and refuses to rebuild one from
+# stored hash values without it; 1.x has a single implicit scheme and no such attribute.
+_SCHEME = getattr(MinHash(num_perm=NUM_PERM), "scheme", None)
 
 
 def shingles(text: str, k: int = SHINGLE) -> list[bytes]:
@@ -50,6 +53,12 @@ def minhash(text: str) -> MinHash | None:
     return m
 
 
+def from_hashvalues(hv: list[int]) -> MinHash:
+    """Rebuild a MinHash from the hash values the per-document step stored as scratch."""
+    kw = {"scheme": _SCHEME} if _SCHEME is not None else {}
+    return MinHash(num_perm=NUM_PERM, hashvalues=hv, **kw)
+
+
 class DuplicationAnalyzer:
     name = "duplication"
     version = "0.1.0"
@@ -60,7 +69,8 @@ class DuplicationAnalyzer:
         self.index_threshold = round(max(0.1, threshold - INDEX_MARGIN), 3)
         self.pins = {"datasketch": pkg_version("datasketch"),
                      "minhash": f"num_perm={NUM_PERM},shingle={SHINGLE}-word,threshold={threshold},"
-                                f"lsh_index={self.index_threshold},lsh_weights={INDEX_WEIGHTS[0]}/{INDEX_WEIGHTS[1]}"}
+                                f"lsh_index={self.index_threshold},lsh_weights={INDEX_WEIGHTS[0]}/{INDEX_WEIGHTS[1]}"
+                                + (f",scheme={_SCHEME}" if _SCHEME else "")}
 
     def per_document(self, record: dict) -> dict:
         m = minhash(record.get("text", ""))
@@ -82,7 +92,7 @@ class DuplicationAnalyzer:
             h = r["doc_hash"]
             hv = r.get("metrics", {}).get(SCRATCH)
             if hv is not None and h not in reps:
-                reps[h] = MinHash(num_perm=NUM_PERM, hashvalues=hv)
+                reps[h] = from_hashvalues(hv)
 
         parent = {h: h for h in reps}
 
