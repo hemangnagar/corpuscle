@@ -4,6 +4,32 @@ An agentic corpus datasheet. Agents plan the scan, investigate the findings, and
 authorizing official — on top of a deterministic, signed measurement core. The signed bundle
 is the only artifact that leaves the core, and it travels with the corpus.
 
+## Positioning
+
+Corpuscle is not a data quality tool. It is evidence.
+
+A model can improve a corpus. It cannot attest to one. A model's judgment is not reproducible,
+not signable, and not something an authorizing official can put their name on. Corpuscle produces
+the artifact that question demands: what was in the corpus, who measured it, with which pinned
+methods, and whether anyone has changed it since.
+
+The objection this design is built for is "the model will take care of data quality in each use case."
+
+- **Agreed, and Corpuscle is what makes that auditable.** Agents plan scans and investigate
+  findings; the deterministic core computes and signs; every agent run is recorded in the manifest
+  beside the metrics. Bring your own agent. We sign what it did.
+- **The buyer is the signer, not the use-case owner.** The authorizing official, the ISSM, the data
+  steward and the CDO cannot answer an AI inventory review or an inspector general with a chat
+  transcript. The bundle is their artifact.
+- **Measured once, trusted everywhere.** A corpus assessed by each use case's own model is paid for
+  per program, with no shared evidence. A signed bundle travels with the corpus, its subsets and
+  its derivatives.
+- **Lead with what a model cannot see about itself.** Marking ceiling breaches, redaction residue,
+  USP indicators, undated documents, and the near-duplicate rate that silently degrades retrieval.
+  Readability is the last thing shown, not the first. The roadmap below is ordered accordingly.
+- **The verifier is the wedge.** No server, no network, no procurement: a directory, its bundle and
+  a public key.
+
 ## What is in this commit (Phase 0)
 
 The schemas that everything else writes to, and the smallest test that proves the architecture.
@@ -52,7 +78,7 @@ corpuscle verify tests/fixtures/sample_corpus --pub keys/dev.pub.pem
 | Phase | Deliverable |
 |---|---|
 | 0 | This commit: schemas, catalog, API spec, round-trip test |
-| 1 | Analyzers for the descriptive, duplication, language, lexical, readability and integrity families under PySpark (local mode for small corpora); plaintext, Office, PDF, email and XML adapters |
-| 2 | Compliance and provenance families; framework mapping and policy; finding gate; report renderer |
+| 1 | Plaintext, Office, PDF, email and XML adapters; PySpark runner (local mode for small corpora); banner and portion-mark parser; language, duplication, integrity, compliance and provenance families; finding gate; report renderer |
+| 2 | Descriptive, lexical and readability families (the `baseline` continuity set); framework mapping and policy |
 | 3 | Agent layer (scan planner, triage investigator, report author) over REST and MCP; proposals and approvals |
 | 4 | Government packaging: OpenTDF transfer package, DoD PKI signer, ISM marking parser, offline install bundle |
