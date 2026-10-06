@@ -33,7 +33,7 @@ The objection this design is built for is "the model will take care of data qual
 ## What is in the repo
 
 Phase 0: the schemas that everything else writes to, and the smallest test that proves the architecture.
-Phase 1, first slices: the duplication and provenance families and the finding gate, so a scan ends in signed findings.
+Phase 1, first slices: the duplication, provenance and integrity families and the finding gate, so a scan ends in signed findings.
 Phase 3, first slice: the triage investigator, a proposal store and approval, so an agent's work is signed beside the numbers. See [docs/architecture.md](docs/architecture.md).
 
 | Path | What |
@@ -48,6 +48,7 @@ Phase 3, first slice: the triage investigator, a proposal store and approval, so
 | `src/corpuscle/tools.py`, `src/corpuscle/proposals.py` | The tool surface agents investigate through (every call hashed into the log; the only write is `propose`) and the proposal store with named approval, which amends and re-signs the manifest |
 | `src/corpuscle_agents/` | The agent layer, the only code that calls a model. Triage investigator over the Anthropic SDK, plus a scripted model for tests and offline demos |
 | `src/corpuscle/analyzers/provenance.py`, `src/corpuscle/adapters/fs.py` | Provenance family computed from the envelope alone: source histogram, date range, undated rate, custody completeness, reliability histogram, derived share, conflicting source ids. The filesystem adapter takes a strict sidecar JSON Lines file so a plain directory can carry what it cannot know by itself |
+| `src/corpuscle/analyzers/integrity.py` | Integrity family: empty, near-empty, truncated, mojibake (ftfy), control characters, markup residue and oversize documents as rates with per-document flags; boilerplate share, intra-document repetition and Gopher-style n-gram repetition as distributions |
 | `src/corpuscle/analyzers/duplication.py` | Exact duplicates from the content hash; near duplicates by MinHash (128 perms, 5-word shingles) with a recall-weighted LSH candidate net confirmed at the 0.8 threshold |
 | `tests/` | Fourteen-document round trip: build, sign, verify; tamper a document, the records, the manifest; wrong key; single-document Merkle proof; derived subset. Gate: findings land in the signed manifest with the flagged documents as evidence, pass on a clean subset, go inconclusive when a metric is missing, and are deterministic |
 
@@ -62,8 +63,9 @@ corpuscle scan tests/fixtures/sample_corpus --corpus-id sample --version-id v1 -
 corpuscle verify tests/fixtures/sample_corpus --pub keys/dev.pub.pem
 ```
 
-The fixture corpus carries one exact pair, two near pairs, two undated documents and one source id
-shared by two different revisions, so the scan ends in four findings:
+The fixture corpus carries one exact pair, two near pairs, two undated documents, one source id
+shared by two different revisions and one one-word file, so the scan ends in ten findings, five of
+them raised:
 
 ```
 policy corpuscle-default/0.1.0
@@ -71,7 +73,16 @@ policy corpuscle-default/0.1.0
   FAIL         high     DUP-002  duplication.near     0.285714 fraction > 0.1
   FLAG         low      PROV-001 provenance.dated     0.142857 fraction > 0.1
   FAIL         high     PROV-002 provenance.identity  0.2 fraction > 0
+  PASS         none     INT-001  integrity.empty      0.0 fraction within policy
+  PASS         none     INT-002  integrity.encoding   0.0 fraction within policy
+  PASS         none     INT-003  integrity.control    0.0 fraction within policy
+  FLAG         low      INT-004  integrity.near_empty 0.071429 fraction > 0.05
+  PASS         none     INT-005  integrity.truncation 0.071429 fraction within policy
+  PASS         none     INT-006  integrity.markup     0.0 fraction within policy
 ```
+
+`tests/fixtures/damaged_corpus` is the opposite: seven files with one defect each (empty, mojibake,
+control characters, markup residue, truncation, boilerplate), and the integrity rules fail or flag on all of them.
 
 Leave `--provenance` off and the same directory is wholly undated (PROV-001 fails) and has no source
 ids to check (PROV-002 is inconclusive): a bare folder of files is not clean, it is unknown.

@@ -127,7 +127,7 @@ def test_without_sidecar_everything_is_undated_and_ids_are_inconclusive(corpus, 
     f = {x["finding_id"]: x for x in m["findings"]}
     assert _results(m)["prov.undated_rate"] == 1.0 and _results(m)["prov.date_range"] is None
     assert f["PROV-001"]["status"] == "fail" and len(f["PROV-001"]["evidence"]) == 13  # 14 docs, one exact-duplicate hash deduped
-    assert f["PROV-002"]["status"] == "inconclusive"
+    assert f["PROV-002"]["status"] == "inconclusive" and "undefined for this corpus" in f["PROV-002"]["gate"]["reason"]
     assert "analyzer:provenance" in m["run"]["pins"]
 
 

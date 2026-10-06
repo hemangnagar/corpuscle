@@ -84,7 +84,8 @@ def evaluate(policy: dict, results: list[dict], records: list[dict]) -> list[dic
         }
         if res is None or res.get("value") is None:
             f.update(status="inconclusive", severity="none")
-            f["gate"].update(verdict="inconclusive", reason=f"{rule['metric_id']} (scope {scope}) not reported in this run")
+            why = "not reported in this run" if res is None else "reported with no value: undefined for this corpus"
+            f["gate"].update(verdict="inconclusive", reason=f"{rule['metric_id']} (scope {scope}) {why}")
         else:
             value = res["value"]
             f["observed"] = value

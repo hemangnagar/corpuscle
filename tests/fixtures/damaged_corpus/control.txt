@@ -1,0 +1,1 @@
+The quarterly review covered ingest throughput, parser failures and the backlog of unprocessed transfers[0m across all six source systems.

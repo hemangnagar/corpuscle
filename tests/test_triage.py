@@ -60,7 +60,7 @@ def _good_script(h):
 def test_tools_read_only_but_propose(scanned):
     inv = Investigation(scanned, scanned)
     h = _hashes(scanned)
-    assert {f["finding_id"] for f in inv.list_findings()} == {"DUP-001", "DUP-002", "PROV-001", "PROV-002"}
+    assert {f["finding_id"] for f in inv.list_findings()} >= {"DUP-001", "DUP-002", "PROV-001", "PROV-002", "INT-001"}
     assert inv.get_finding("DUP-002")["status"] == "fail"
     rec = inv.get_record(h["memo-01.txt"])
     assert "exact_duplicate" in rec["flags"] and "text" not in rec

@@ -47,3 +47,56 @@ rules:
     severity: {fail: high}
     evidence_flag: duplicate_source_id
     rationale: One source identifier over two different byte contents means the source, the transfer, or the adapter has mixed documents up. Inconclusive when no source supplies identifiers.
+  - rule_id: INT-001
+    clause: integrity.empty
+    title: Empty document rate
+    metric_id: int.empty_rate
+    fail: {op: ">", value: 0}
+    severity: {fail: medium}
+    evidence_flag: empty
+    rationale: A document with no extractable text is almost always a failed parse, and a failed parse is a document the corpus claims to contain and does not.
+  - rule_id: INT-002
+    clause: integrity.encoding
+    title: Mojibake rate
+    metric_id: int.mojibake_rate
+    flag: {op: ">", value: 0}
+    fail: {op: ">", value: 0.05}
+    severity: {flag: low, fail: medium}
+    evidence_flag: mojibake
+    rationale: Encoding damage is silent to a model and corrupts every token it touches; it is also repairable, so it should be fixed at the source, not tolerated.
+  - rule_id: INT-003
+    clause: integrity.control
+    title: Control-character rate
+    metric_id: int.control_char_rate
+    flag: {op: ">", value: 0}
+    fail: {op: ">", value: 0.05}
+    severity: {flag: low, fail: medium}
+    evidence_flag: control_chars
+    rationale: Control characters and replacement characters mean bytes were lost or misread between the source and the corpus.
+  - rule_id: INT-004
+    clause: integrity.near_empty
+    title: Near-empty document rate
+    metric_id: int.near_empty_rate
+    flag: {op: ">", value: 0.05}
+    fail: {op: ">", value: 0.20}
+    severity: {flag: low, fail: medium}
+    evidence_flag: near_empty
+    rationale: Documents under twenty tokens carry almost no signal and inflate document counts.
+  - rule_id: INT-005
+    clause: integrity.truncation
+    title: Truncation rate
+    metric_id: int.truncation_rate
+    flag: {op: ">", value: 0.10}
+    fail: {op: ">", value: 0.30}
+    severity: {flag: low, fail: medium}
+    evidence_flag: truncated
+    rationale: A document that stops mid-sentence was cut by an extractor, a size limit or a transfer; the missing tail is unknown.
+  - rule_id: INT-006
+    clause: integrity.markup
+    title: Markup residue rate
+    metric_id: int.markup_residue_rate
+    flag: {op: ">", value: 0.05}
+    fail: {op: ">", value: 0.25}
+    severity: {flag: low, fail: medium}
+    evidence_flag: markup_residue
+    rationale: Tags and entities that survive parsing are noise a model will learn and a sign the adapter took the wrong extraction path.

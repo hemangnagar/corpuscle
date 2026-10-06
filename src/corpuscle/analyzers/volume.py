@@ -4,15 +4,23 @@ from typing import Iterable
 from . import Result, register
 
 
+CHARS_PER_TOKEN = 3.6
+
+
+def estimate_tokens(text: str) -> int:
+    """v0 token estimate; replaced by the tiktoken pin in Phase 2. Other analyzers share it so
+    "under 20 tokens" means the same thing everywhere."""
+    return max(1, round(len(text) / CHARS_PER_TOKEN)) if text else 0
+
+
 class VolumeAnalyzer:
     name = "volume"
     version = "0.1.0"
     produces = ("vol.total_docs", "vol.total_tokens", "cnt.token_count")
-    pins = {"tokenizer": "char-estimate/3.6"}  # replaced by tiktoken o200k_base in Phase 1
+    pins = {"tokenizer": f"char-estimate/{CHARS_PER_TOKEN}"}  # replaced by tiktoken o200k_base in Phase 1
 
     def per_document(self, record: dict) -> dict:
-        text = record.get("text", "")
-        return {"cnt.token_count": max(1, round(len(text) / 3.6)) if text else 0}
+        return {"cnt.token_count": estimate_tokens(record.get("text", ""))}
 
     def corpus(self, records: Iterable[dict]) -> list[Result]:
         n, tokens, per = 0, 0, []

@@ -11,7 +11,7 @@ from typing import Iterable
 
 from . import __version__
 from .analyzers import REGISTRY, Result
-from .analyzers import duplication, provenance, volume  # noqa: F401  registers analyzers
+from .analyzers import duplication, integrity, provenance, volume  # noqa: F401  registers analyzers
 from .catalog import version as catalog_version
 from .envelope import now_iso, validate
 from . import gate

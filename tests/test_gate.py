@@ -147,7 +147,8 @@ def test_clean_subset_passes_duplication_but_not_provenance(corpus, signer, tmp_
     m = build(clean, corpus_id="sample", version_id="clean", docs=list(_docs_from_dir(clean)), signers=[signer])
     by = {f["finding_id"]: (f["status"], f["severity"]) for f in m["findings"]}
     assert by == {"DUP-001": ("pass", "none"), "DUP-002": ("pass", "none"),
-                  "PROV-001": ("fail", "medium"), "PROV-002": ("inconclusive", "none")}
+                  "PROV-001": ("fail", "medium"), "PROV-002": ("inconclusive", "none"),
+                  **{f"INT-00{i}": ("pass", "none") for i in range(1, 7)}}
     assert all("evidence" not in f for f in m["findings"] if f["finding_id"].startswith("DUP"))
     assert len(next(f for f in m["findings"] if f["finding_id"] == "PROV-001")["evidence"]) == 5
 
@@ -173,7 +174,7 @@ def test_flag_band_and_inconclusive(corpus, signer):
     f = {x["finding_id"]: x for x in m["findings"]}
     assert f["T-1"]["status"] == "flag" and f["T-1"]["severity"] == "low"
     assert f["T-2"]["status"] == "inconclusive" and f["T-2"]["severity"] == "none"
-    assert "not reported" in f["T-2"]["gate"]["reason"]
+    assert "not reported in this run" in f["T-2"]["gate"]["reason"]
     assert m["run"]["policy_version"] == "t/1"
     assert m["run"]["pins"]["policy:t"] == gate.policy_hash(policy)
 
@@ -198,4 +199,4 @@ def test_agent_findings_append_after_gate(corpus, signer):
              "metric_ids": ["dup.near_rate"], "status": "flag", "severity": "low", "assessment": "artifact",
              "narrative": "Two revisions of one report; expected in a working folder."}
     m = _scan(corpus, signer, findings=[extra])
-    assert [f["finding_id"] for f in m["findings"]] == ["DUP-001", "DUP-002", "PROV-001", "PROV-002", "AGENT-1"]
+    assert [f["finding_id"] for f in m["findings"]] == ["DUP-001", "DUP-002", "PROV-001", "PROV-002"] + [f"INT-00{i}" for i in range(1, 7)] + ["AGENT-1"]

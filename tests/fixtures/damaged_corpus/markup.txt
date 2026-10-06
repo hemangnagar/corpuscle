@@ -1,0 +1,1 @@
+<p>The quarterly review covered ingest throughput and parser failures.</p><div class="note">Backlog figures are in the appendix&nbsp;table.</div>
