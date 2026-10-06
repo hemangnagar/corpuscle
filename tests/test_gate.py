@@ -54,14 +54,15 @@ def test_exact_and_near_metrics(corpus, signer):
 
 
 def test_flags_name_the_documents(corpus, signer):
+    """Scanned without a provenance sidecar, so every record is also flagged undated."""
     _scan(corpus, signer)
     recs = _by_locator(corpus)
-    assert recs["memo-01.txt"]["flags"] == ["exact_duplicate"]
-    assert recs["memo-04.txt"]["flags"] == ["exact_duplicate"]
+    assert recs["memo-01.txt"]["flags"] == ["exact_duplicate", "undated"]
+    assert recs["memo-04.txt"]["flags"] == ["exact_duplicate", "undated"]
     for n in ("report-11.txt", "report-11-rev2.txt", "bulletin-12.txt", "bulletin-12-copy.txt"):
-        assert recs[n]["flags"] == ["near_duplicate"], n
+        assert recs[n]["flags"] == ["near_duplicate", "undated"], n
     for n in ("memo-02.txt", "report-06.txt", "short-09.txt"):
-        assert "flags" not in recs[n], n
+        assert recs[n]["flags"] == ["undated"], n
 
 
 def test_scratch_never_reaches_the_bundle(corpus, signer):
@@ -137,14 +138,18 @@ def test_findings_are_deterministic(corpus, signer):
     assert m1["results"] == m2["results"]
 
 
-def test_clean_subset_passes(corpus, signer, tmp_path):
+def test_clean_subset_passes_duplication_but_not_provenance(corpus, signer, tmp_path):
+    """Five distinct files in a bare directory: no duplicates, but wholly undated and no source ids."""
     clean = tmp_path / "clean"
     clean.mkdir()
     for n in ("memo-01.txt", "memo-02.txt", "report-06.txt", "report-07.txt", "report-11.txt"):
         shutil.copy(corpus / n, clean / n)
     m = build(clean, corpus_id="sample", version_id="clean", docs=list(_docs_from_dir(clean)), signers=[signer])
-    assert [(f["status"], f["severity"]) for f in m["findings"]] == [("pass", "none"), ("pass", "none")]
-    assert all("evidence" not in f for f in m["findings"])
+    by = {f["finding_id"]: (f["status"], f["severity"]) for f in m["findings"]}
+    assert by == {"DUP-001": ("pass", "none"), "DUP-002": ("pass", "none"),
+                  "PROV-001": ("fail", "medium"), "PROV-002": ("inconclusive", "none")}
+    assert all("evidence" not in f for f in m["findings"] if f["finding_id"].startswith("DUP"))
+    assert len(next(f for f in m["findings"] if f["finding_id"] == "PROV-001")["evidence"]) == 5
 
 
 def test_no_policy_means_no_findings(corpus, signer):
@@ -193,4 +198,4 @@ def test_agent_findings_append_after_gate(corpus, signer):
              "metric_ids": ["dup.near_rate"], "status": "flag", "severity": "low", "assessment": "artifact",
              "narrative": "Two revisions of one report; expected in a working folder."}
     m = _scan(corpus, signer, findings=[extra])
-    assert [f["finding_id"] for f in m["findings"]] == ["DUP-001", "DUP-002", "AGENT-1"]
+    assert [f["finding_id"] for f in m["findings"]] == ["DUP-001", "DUP-002", "PROV-001", "PROV-002", "AGENT-1"]

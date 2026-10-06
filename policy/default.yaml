@@ -30,3 +30,20 @@ rules:
     severity: {flag: medium, fail: high}
     evidence_flag: near_duplicate
     rationale: Near duplicates degrade retrieval diversity and over-weight their content in training; a model sees none of this about its own corpus.
+  - rule_id: PROV-001
+    clause: provenance.dated
+    title: Undated document rate
+    metric_id: prov.undated_rate
+    flag: {op: ">", value: 0.10}
+    fail: {op: ">", value: 0.50}
+    severity: {flag: low, fail: medium}
+    evidence_flag: undated
+    rationale: A document with no collection date cannot be placed in time, aged out, or matched to a retention rule. A directory of files with no provenance is wholly undated, and that is a finding, not a default.
+  - rule_id: PROV-002
+    clause: provenance.identity
+    title: Conflicting source identifiers
+    metric_id: prov.duplicate_id_rate
+    fail: {op: ">", value: 0}
+    severity: {fail: high}
+    evidence_flag: duplicate_source_id
+    rationale: One source identifier over two different byte contents means the source, the transfer, or the adapter has mixed documents up. Inconclusive when no source supplies identifiers.

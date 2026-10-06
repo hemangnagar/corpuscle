@@ -1,0 +1,14 @@
+{"locator": "memo-01.txt", "source_system": "sharepoint", "source_id": "MEMO-2026-0412", "collected_at": "2026-04-12T09:15:00Z", "custody": [{"actor": "sharepoint-export", "at": "2026-04-12T09:15:00Z", "action": "export"}, {"actor": "ingest-svc", "at": "2026-04-13T01:00:00Z", "action": "ingest"}], "reliability": {"source": "B", "information": "2"}}
+{"locator": "memo-02.txt", "source_system": "sharepoint", "source_id": "MEMO-2026-0419", "collected_at": "2026-04-19T10:02:00Z", "custody": [{"actor": "sharepoint-export", "at": "2026-04-19T10:02:00Z", "action": "export"}], "reliability": {"source": "B", "information": "2"}}
+{"locator": "memo-03.txt", "source_system": "sharepoint", "source_id": "MEMO-2026-0426", "collected_at": "2026-04-26T08:40:00Z", "reliability": {"source": "B", "information": "3"}}
+{"locator": "memo-04.txt", "source_system": "sharepoint", "source_id": "MEMO-2026-0412-COPY", "collected_at": "2026-05-03T09:15:00Z"}
+{"locator": "notes-05.md", "source_system": "fs", "collected_at": "2026-05-06T14:00:00Z"}
+{"locator": "report-06.txt", "source_system": "records-mgmt", "source_id": "RPT-0006", "collected_at": "2026-05-10T16:30:00Z", "custody": [{"actor": "records-mgmt", "at": "2026-05-10T16:30:00Z", "action": "release"}], "reliability": {"source": "A", "information": "1"}}
+{"locator": "report-07.txt", "source_system": "records-mgmt", "source_id": "RPT-0007", "collected_at": "2026-05-17T16:30:00Z", "custody": [{"actor": "records-mgmt", "at": "2026-05-17T16:30:00Z", "action": "release"}], "reliability": {"source": "A", "information": "2"}}
+{"locator": "log-08.txt", "source_system": "syslog", "collected_at": "2026-05-20T00:00:00Z"}
+{"locator": "short-09.txt", "source_system": "fs"}
+{"locator": "mixed-10.txt", "source_system": "fs"}
+{"locator": "report-11.txt", "source_system": "records-mgmt", "source_id": "RPT-0011", "collected_at": "2026-05-24T16:30:00Z", "custody": [{"actor": "records-mgmt", "at": "2026-05-24T16:30:00Z", "action": "release"}], "reliability": {"source": "A", "information": "2"}}
+{"locator": "report-11-rev2.txt", "source_system": "records-mgmt", "source_id": "RPT-0011", "collected_at": "2026-05-31T16:30:00Z", "custody": [{"actor": "records-mgmt", "at": "2026-05-31T16:30:00Z", "action": "release"}], "reliability": {"source": "A", "information": "2"}}
+{"locator": "bulletin-12.txt", "source_system": "mailbox", "source_id": "msg-7f3a", "collected_at": "2026-06-02T07:00:00Z", "custody": [{"actor": "mailbox-export", "at": "2026-06-02T07:00:00Z", "action": "export"}]}
+{"locator": "bulletin-12-copy.txt", "source_system": "mailbox", "source_id": "msg-7f3a-fwd", "collected_at": "2026-06-03T07:00:00Z", "parent_hash": "78e43622743c72adcacebcda9c36c5d4fab029569890cffb09d4984aa7d5f968"}
