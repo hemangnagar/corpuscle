@@ -33,7 +33,7 @@ The objection this design is built for is "the model will take care of data qual
 ## What is in the repo
 
 Phase 0: the schemas that everything else writes to, and the smallest test that proves the architecture.
-Phase 1, first slices: the duplication, provenance and integrity families and the finding gate, so a scan ends in signed findings.
+Phase 1, first slices: the duplication, provenance and integrity families, the banner and portion-mark parser with the marking metrics, and the finding gate, so a scan ends in signed findings.
 Phase 3, first slice: the triage investigator, a proposal store and approval, so an agent's work is signed beside the numbers. See [docs/architecture.md](docs/architecture.md).
 
 | Path | What |
@@ -48,6 +48,8 @@ Phase 3, first slice: the triage investigator, a proposal store and approval, so
 | `src/corpuscle/tools.py`, `src/corpuscle/proposals.py` | The tool surface agents investigate through (every call hashed into the log; the only write is `propose`) and the proposal store with named approval, which amends and re-signs the manifest |
 | `src/corpuscle_agents/` | The agent layer, the only code that calls a model. Triage investigator over the Anthropic SDK, plus a scripted model for tests and offline demos |
 | `src/corpuscle/analyzers/provenance.py`, `src/corpuscle/adapters/fs.py` | Provenance family computed from the envelope alone: source histogram, date range, undated rate, custody completeness, reliability histogram, derived share, conflicting source ids. The filesystem adapter takes a strict sidecar JSON Lines file so a plain directory can carry what it cannot know by itself |
+| `src/corpuscle/markings.py`, `src/corpuscle/analyzers/markings.py` | Plain-text banner and portion-mark parser (UNCLASSIFIED, CUI//SP-PRVCY, SECRET//NOFORN, (U), (S//NF) and the like) and the marking metrics: coverage, banner/portion conflicts, documents above the run's authorized ceiling (`scan --ceiling`), redaction residue. Levels and counts only; marked text is never stored |
+| `policy/marked-corpus.yaml` | A second policy for corpora that must be fully marked: coverage required, no conflicts, nothing above the ceiling, no residue |
 | `src/corpuscle/analyzers/integrity.py` | Integrity family: empty, near-empty, truncated, mojibake (ftfy), control characters, markup residue and oversize documents as rates with per-document flags; boilerplate share, intra-document repetition and Gopher-style n-gram repetition as distributions |
 | `src/corpuscle/analyzers/duplication.py` | Exact duplicates from the content hash; near duplicates by MinHash (128 perms, 5-word shingles) with a recall-weighted LSH candidate net confirmed at the 0.8 threshold |
 | `tests/` | Fourteen-document round trip: build, sign, verify; tamper a document, the records, the manifest; wrong key; single-document Merkle proof; derived subset. Gate: findings land in the signed manifest with the flagged documents as evidence, pass on a clean subset, go inconclusive when a metric is missing, and are deterministic |
@@ -83,6 +85,26 @@ policy corpuscle-default/0.1.0
 
 `tests/fixtures/damaged_corpus` is the opposite: seven files with one defect each (empty, mojibake,
 control characters, markup residue, truncation, boilerplate), and the integrity rules fail or flag on all of them.
+
+`tests/fixtures/marked_corpus` carries banners and portion marks, with one unmarked file, one banner
+that understates its portions, two documents above a CUI ceiling and two with redaction residue:
+
+```bash
+corpuscle scan tests/fixtures/marked_corpus --corpus-id marked --version-id v1 --key keys/dev.key.pem \
+    --ceiling CUI --policy policy/marked-corpus.yaml
+```
+
+```
+policy corpuscle-marked/0.1.0
+  FAIL         high     MARK-000 markings.coverage    0.857143 fraction < 0.9
+  FAIL         high     MARK-001 markings.conflict    0.142857 fraction > 0
+  FAIL         critical MARK-002 markings.ceiling     2 docs > 0
+  FAIL         high     MARK-003 markings.redaction   0.285714 fraction > 0
+  PASS         none     DUP-002  duplication.near     0.0 fraction within policy
+```
+
+Without `--ceiling` the breach count is undefined and the gate says inconclusive: the question was
+not asked of that run. The default policy carries the conflict, ceiling and residue rules too.
 
 Leave `--provenance` off and the same directory is wholly undated (PROV-001 fails) and has no source
 ids to check (PROV-002 is inconclusive): a bare folder of files is not clean, it is unknown.

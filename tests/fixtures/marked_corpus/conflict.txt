@@ -1,0 +1,9 @@
+UNCLASSIFIED
+
+(U) Summary of the quarterly ingest review for the records office.
+
+(S//NF) The source system for the third collection window is described in the annex.
+
+(U) Recommend re-parsing the annex before release.
+
+UNCLASSIFIED

@@ -40,6 +40,8 @@ def main(argv=None):
     s.add_argument("--key", required=True, help="private key PEM"); s.add_argument("--keyid", default="dev")
     s.add_argument("--policy", default=None, help="finding policy YAML (default: policy/default.yaml)")
     s.add_argument("--provenance", default=None, help="sidecar JSON Lines with per-document provenance, keyed by locator")
+    s.add_argument("--ceiling", default=None, choices=["U", "CUI", "C", "S", "TS"],
+                   help="authorized marking ceiling for this corpus; without it mark.ceiling_breach is undefined")
     s.add_argument("--no-policy", action="store_true", help="measure only; write no findings")
 
     v = sub.add_parser("verify", help="verify a bundle offline against a public key")
@@ -73,7 +75,8 @@ def main(argv=None):
         policy = None if a.no_policy else (a.policy or DEFAULT_POLICY)
         try:
             m = build(cd, corpus_id=a.corpus_id, version_id=a.version_id, docs=list(_docs_from_dir(cd, a.provenance)),
-                      signers=[Ed25519Signer.from_pem(a.key, a.keyid)], policy=policy)
+                      signers=[Ed25519Signer.from_pem(a.key, a.keyid)], policy=policy,
+                      analyzer_config={"markings": {"ceiling": a.ceiling}} if a.ceiling else None)
         except PolicyError as e:
             sys.exit(f"policy error: {e}")
         except ProvenanceError as e:

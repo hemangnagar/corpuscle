@@ -11,7 +11,7 @@ from typing import Iterable
 
 from . import __version__
 from .analyzers import REGISTRY, Result
-from .analyzers import duplication, integrity, provenance, volume  # noqa: F401  registers analyzers
+from .analyzers import duplication, integrity, markings, provenance, volume  # noqa: F401  registers analyzers
 from .catalog import version as catalog_version
 from .envelope import now_iso, validate
 from . import gate
@@ -21,10 +21,18 @@ from .signing import Signer, sign_manifest
 BUNDLE_DIR = ".corpuscle"
 
 
-def run_analyzers(docs: Iterable[dict], analyzers: list[str] | None = None) -> tuple[list[dict], list[Result], dict]:
-    """docs: dicts with 'envelope' (validated) and optional 'text'. Returns (records, results, pins)."""
+def run_analyzers(docs: Iterable[dict], analyzers: list[str] | None = None,
+                  config: dict[str, dict] | None = None) -> tuple[list[dict], list[Result], dict]:
+    """docs: dicts with 'envelope' (validated) and optional 'text'. Returns (records, results, pins).
+    config maps an analyzer name to keyword arguments for its with_config(); the configured
+    instance records its parameters in the pins."""
     names = analyzers or list(REGISTRY)
-    active = [REGISTRY[n] for n in names]
+    active = []
+    for n in names:
+        a = REGISTRY[n]
+        if config and n in config:
+            a = a.with_config(**config[n])
+        active.append(a)
     records = []
     for d in docs:
         rec = {"doc_hash": d["envelope"]["doc_hash"], "envelope": d["envelope"], "metrics": {}}
@@ -46,11 +54,12 @@ def run_analyzers(docs: Iterable[dict], analyzers: list[str] | None = None) -> t
 def build(out_dir, *, corpus_id: str, version_id: str, docs: list[dict], signers: list[Signer],
           analyzers: list[str] | None = None, policy: dict | str | Path | None = gate.DEFAULT_POLICY,
           engine: str = "local", findings: list[dict] | None = None, agent_runs: list[dict] | None = None,
-          derived_from: dict | None = None, markings: list[str] | None = None) -> dict:
+          derived_from: dict | None = None, markings: list[str] | None = None,
+          analyzer_config: dict[str, dict] | None = None) -> dict:
     """policy: a loaded policy dict, a path to one, or None to skip the gate. Findings passed in
     (from an approved agent proposal, say) are appended after the gate's own."""
     started = now_iso()
-    records, results, pins = run_analyzers(docs, analyzers)
+    records, results, pins = run_analyzers(docs, analyzers, analyzer_config)
     result_json = [r.to_json() for r in results]
     policy_version, gated = "none", []
     if policy is not None:

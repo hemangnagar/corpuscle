@@ -1,0 +1,7 @@
+SECRET//NOFORN
+
+(S//NF) Collection window three drew on a single source whose reliability is rated B2.
+
+(U) The ingest pipeline processed the window without a parser failure.
+
+SECRET//NOFORN

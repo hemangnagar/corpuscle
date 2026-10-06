@@ -100,3 +100,28 @@ rules:
     severity: {flag: low, fail: medium}
     evidence_flag: markup_residue
     rationale: Tags and entities that survive parsing are noise a model will learn and a sign the adapter took the wrong extraction path.
+  - rule_id: MARK-001
+    clause: markings.conflict
+    title: Banner and portion marks disagree
+    metric_id: mark.conflict_rate
+    fail: {op: ">", value: 0}
+    severity: {fail: high}
+    evidence_flag: marking_conflict
+    rationale: A banner that understates its portions, or two banners at different levels, is a document whose handling cannot be trusted from its face.
+  - rule_id: MARK-002
+    clause: markings.ceiling
+    title: Documents above the authorized ceiling
+    metric_id: mark.ceiling_breach
+    fail: {op: ">", value: 0}
+    severity: {fail: critical}
+    evidence_flag: ceiling_breach
+    rationale: Content marked above what the corpus is authorized to hold is a spill. Inconclusive unless the run declares a ceiling.
+  - rule_id: MARK-003
+    clause: markings.redaction
+    title: Redaction residue
+    metric_id: mark.redaction_residue_rate
+    flag: {op: ">", value: 0}
+    fail: {op: ">", value: 0.05}
+    severity: {flag: medium, fail: high}
+    evidence_flag: redaction_residue
+    rationale: A redaction placeholder or a pasted marking inside body text means a document was partially sanitized; what is around it was not reviewed as a whole.

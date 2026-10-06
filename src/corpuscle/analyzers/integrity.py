@@ -3,8 +3,8 @@
 Corpus-level rates, one flag each on the record:
   empty            no extractable text after parsing (usually a failed parse, not a short document)
   near_empty       under 20 tokens (same estimate the volume family uses)
-  truncated        non-empty, not near-empty, and the last character after trailing markup is
-                   stripped is not terminal punctuation
+  truncated        non-empty, not near-empty, and the last character is not terminal punctuation
+                   once trailing markup and a trailing banner line are set aside
   mojibake         ftfy.fix_encoding changes the text: fixable encoding damage
   control_chars    a Cc control character outside whitespace, or U+FFFD, the replacement character
   markup_residue   an HTML/XML tag or entity survived parsing
@@ -29,6 +29,7 @@ from typing import Iterable
 
 import ftfy
 
+from ..markings import parse_banner
 from . import Result, register
 from .volume import estimate_tokens
 
@@ -125,7 +126,10 @@ class IntegrityAnalyzer:
         if tokens < NEAR_EMPTY_TOKENS:
             f.append("near_empty")
         else:
-            tail = _ENTITY.sub("", _TAG.sub("", stripped)).rstrip()
+            lines = [l for l in stripped.splitlines() if l.strip()]
+            while lines and parse_banner(lines[-1]):
+                lines.pop()
+            tail = _ENTITY.sub("", _TAG.sub("", "\n".join(lines))).rstrip()
             if tail and tail[-1] not in TERMINAL:
                 f.append("truncated")
         if stripped and is_mojibake(text):

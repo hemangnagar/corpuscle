@@ -1,0 +1,47 @@
+# Policy for a corpus that must be fully marked: every document carries a banner or portion
+# marks, nothing conflicts, nothing exceeds the ceiling, nothing is partially redacted.
+# Use with `scan --ceiling <level> --policy policy/marked-corpus.yaml`.
+policy_id: corpuscle-marked
+policy_version: 0.1.0
+framework: corpuscle-marked
+description: Thresholds for a corpus whose every document must be marked and within an authorized ceiling.
+evidence_limit: 50
+rules:
+  - rule_id: MARK-000
+    clause: markings.coverage
+    title: Marking coverage
+    metric_id: mark.coverage
+    flag: {op: "<", value: 1.0}
+    fail: {op: "<", value: 0.9}
+    severity: {flag: medium, fail: high}
+    evidence_flag: unmarked
+    rationale: In a marked corpus an unmarked document is either misfiled or was never reviewed.
+  - rule_id: MARK-001
+    clause: markings.conflict
+    title: Banner and portion marks disagree
+    metric_id: mark.conflict_rate
+    fail: {op: ">", value: 0}
+    severity: {fail: high}
+    evidence_flag: marking_conflict
+  - rule_id: MARK-002
+    clause: markings.ceiling
+    title: Documents above the authorized ceiling
+    metric_id: mark.ceiling_breach
+    fail: {op: ">", value: 0}
+    severity: {fail: critical}
+    evidence_flag: ceiling_breach
+  - rule_id: MARK-003
+    clause: markings.redaction
+    title: Redaction residue
+    metric_id: mark.redaction_residue_rate
+    fail: {op: ">", value: 0}
+    severity: {fail: high}
+    evidence_flag: redaction_residue
+  - rule_id: DUP-002
+    clause: duplication.near
+    title: Near-duplicate rate
+    metric_id: dup.near_rate
+    flag: {op: ">", value: 0.02}
+    fail: {op: ">", value: 0.10}
+    severity: {flag: medium, fail: high}
+    evidence_flag: near_duplicate

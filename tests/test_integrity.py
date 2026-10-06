@@ -72,7 +72,7 @@ def test_damaged_corpus_rates_and_flags(tmp_path, signer):
     assert res["int.boilerplate_share"]["distribution"]["max"] == pytest.approx(4 / 6, abs=1e-6)
     assert res["int.intra_doc_repetition"]["distribution"]["max"] == pytest.approx(1 / 6, abs=1e-6)
     assert res["int.ngram_repetition"]["distribution"]["max"] > 0.7
-    strip = lambda n: [f for f in recs[n]["flags"] if f != "undated"]
+    strip = lambda n: [f for f in recs[n]["flags"] if f not in ("undated", "unmarked")]
     assert strip("empty.txt") == ["empty", "near_empty"]
     assert strip("mojibake.txt") == ["mojibake"]
     assert strip("control.txt") == ["control_chars"]

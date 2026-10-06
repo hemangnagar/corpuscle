@@ -108,8 +108,8 @@ def test_fixture_provenance(corpus, signer):
     assert res["prov.duplicate_id_count"] == 2 and res["prov.duplicate_id_rate"] == pytest.approx(2 / 10, abs=1e-6)
     recs = _records(corpus)
     assert "undated" in recs["short-09.txt"]["flags"] and "undated" in recs["mixed-10.txt"]["flags"]
-    assert recs["report-11.txt"]["flags"] == ["duplicate_source_id", "near_duplicate"]
-    assert recs["memo-01.txt"]["flags"] == ["exact_duplicate"]  # distinct ids, so no id conflict
+    assert recs["report-11.txt"]["flags"] == ["duplicate_source_id", "near_duplicate", "unmarked"]
+    assert recs["memo-01.txt"]["flags"] == ["exact_duplicate", "unmarked"]  # distinct ids, so no id conflict
     assert recs["bulletin-12-copy.txt"]["envelope"]["parent_hash"] == recs["bulletin-12.txt"]["doc_hash"]
 
 

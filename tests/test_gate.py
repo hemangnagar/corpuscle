@@ -54,17 +54,17 @@ def test_exact_and_near_metrics(corpus, signer):
 
 
 def test_flags_name_the_documents(corpus, signer):
-    """Scanned without a provenance sidecar, so every record is also flagged undated."""
+    """Scanned without a provenance sidecar and with no markings, so every record is also undated and unmarked."""
     _scan(corpus, signer)
-    recs = _by_locator(corpus)
-    assert recs["memo-01.txt"]["flags"] == ["exact_duplicate", "undated"]
-    assert recs["memo-04.txt"]["flags"] == ["exact_duplicate", "undated"]
+    recs = {k: [f for f in v["flags"] if f not in ("undated", "unmarked")] for k, v in _by_locator(corpus).items()}
+    assert recs["memo-01.txt"] == ["exact_duplicate"] and recs["memo-04.txt"] == ["exact_duplicate"]
     for n in ("report-11.txt", "report-11-rev2.txt", "bulletin-12.txt", "bulletin-12-copy.txt"):
-        assert recs[n]["flags"] == ["near_duplicate", "undated"], n
+        assert recs[n] == ["near_duplicate"], n
     for n in ("memo-02.txt", "report-06.txt"):
-        assert recs[n]["flags"] == ["undated"], n
-    assert recs["short-09.txt"]["flags"] == ["near_empty", "undated"]   # one word
-    assert recs["log-08.txt"]["flags"] == ["truncated", "undated"]      # no terminal punctuation
+        assert recs[n] == [], n
+    assert recs["short-09.txt"] == ["near_empty"]   # one word
+    assert recs["log-08.txt"] == ["truncated"]      # no terminal punctuation
+    assert all("undated" in v["flags"] and "unmarked" in v["flags"] for v in _by_locator(corpus).values())
 
 
 def test_scratch_never_reaches_the_bundle(corpus, signer):
@@ -150,7 +150,8 @@ def test_clean_subset_passes_duplication_but_not_provenance(corpus, signer, tmp_
     by = {f["finding_id"]: (f["status"], f["severity"]) for f in m["findings"]}
     assert by == {"DUP-001": ("pass", "none"), "DUP-002": ("pass", "none"),
                   "PROV-001": ("fail", "medium"), "PROV-002": ("inconclusive", "none"),
-                  **{f"INT-00{i}": ("pass", "none") for i in range(1, 7)}}
+                  **{f"INT-00{i}": ("pass", "none") for i in range(1, 7)},
+                  "MARK-001": ("pass", "none"), "MARK-002": ("inconclusive", "none"), "MARK-003": ("pass", "none")}
     assert all("evidence" not in f for f in m["findings"] if f["finding_id"].startswith("DUP"))
     assert len(next(f for f in m["findings"] if f["finding_id"] == "PROV-001")["evidence"]) == 5
 
@@ -201,4 +202,5 @@ def test_agent_findings_append_after_gate(corpus, signer):
              "metric_ids": ["dup.near_rate"], "status": "flag", "severity": "low", "assessment": "artifact",
              "narrative": "Two revisions of one report; expected in a working folder."}
     m = _scan(corpus, signer, findings=[extra])
-    assert [f["finding_id"] for f in m["findings"]] == ["DUP-001", "DUP-002", "PROV-001", "PROV-002"] + [f"INT-00{i}" for i in range(1, 7)] + ["AGENT-1"]
+    assert [f["finding_id"] for f in m["findings"]] == (["DUP-001", "DUP-002", "PROV-001", "PROV-002"] + [f"INT-00{i}" for i in range(1, 7)]
+                                                        + ["MARK-001", "MARK-002", "MARK-003", "AGENT-1"])
