@@ -61,8 +61,10 @@ def test_flags_name_the_documents(corpus, signer):
     assert recs["memo-04.txt"]["flags"] == ["exact_duplicate", "undated"]
     for n in ("report-11.txt", "report-11-rev2.txt", "bulletin-12.txt", "bulletin-12-copy.txt"):
         assert recs[n]["flags"] == ["near_duplicate", "undated"], n
-    for n in ("memo-02.txt", "report-06.txt", "short-09.txt"):
+    for n in ("memo-02.txt", "report-06.txt"):
         assert recs[n]["flags"] == ["undated"], n
+    assert recs["short-09.txt"]["flags"] == ["near_empty", "undated"]   # one word
+    assert recs["log-08.txt"]["flags"] == ["truncated", "undated"]      # no terminal punctuation
 
 
 def test_scratch_never_reaches_the_bundle(corpus, signer):
