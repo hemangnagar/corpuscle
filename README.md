@@ -53,7 +53,7 @@ Phase 3, first slice: the triage investigator, a proposal store and approval, so
 ## Try it
 
 ```bash
-pip install -e ".[dev]"
+pip install -e ".[dev]"            # Python 3.10+; on Windows, `py -3.11 -m venv .venv` if `py` defaults to an older interpreter
 pytest -q
 corpuscle keygen --out keys
 corpuscle scan tests/fixtures/sample_corpus --corpus-id sample --version-id v1 --key keys/dev.key.pem

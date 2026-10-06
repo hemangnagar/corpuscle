@@ -6,7 +6,7 @@ from pathlib import Path
 from .envelope import make_envelope
 from .gate import DEFAULT_POLICY, PolicyError
 from . import proposals as store
-from .manifest import build
+from .manifest import BUNDLE_DIR, build
 from .signing import Ed25519Signer, Ed25519Verifier
 from .verify import verify
 
@@ -81,7 +81,7 @@ def main(argv=None):
                       signers=[Ed25519Signer.from_pem(a.key, a.keyid)], policy=policy)
         except PolicyError as e:
             sys.exit(f"policy error: {e}")
-        print(f"bundle written to {cd}/.corpuscle  root={m['corpus']['merkle_root'][:16]}…  docs={m['corpus']['document_count']}")
+        print(f"bundle written to {cd / BUNDLE_DIR}  root={m['corpus']['merkle_root'][:16]}…  docs={m['corpus']['document_count']}")
         if m["findings"]:
             print(f"policy {m['run']['policy_version']}")
             for f in m["findings"]:

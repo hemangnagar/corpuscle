@@ -139,3 +139,13 @@ def test_volume_results_present(corpus, signer):
     assert by_id["vol.total_tokens"]["value"] > 0
     assert "p95" in by_id["cnt.token_count"]["distribution"]
     assert "analyzer:volume" in m["run"]["pins"]
+
+
+FIXTURE_ROOT = "d0ad149212ec3606fe32125938d16cbba3080416dae2e2088ed35d5e9f598f78"
+
+
+def test_fixture_root_is_platform_independent(corpus, signer):
+    """The fixture corpus has one identity everywhere. A Windows checkout with autocrlf once produced a
+    different root because the two multi-line fixtures gained CRLF endings; .gitattributes now pins
+    the bytes, and this test fails loudly if a checkout ever changes them again."""
+    assert _scan(corpus, signer)["corpus"]["merkle_root"] == FIXTURE_ROOT

@@ -1,0 +1,3 @@
+# Fixture corpora are content-addressed: their bytes must be identical on every platform.
+# Never convert line endings on checkout.
+tests/fixtures/** -text
